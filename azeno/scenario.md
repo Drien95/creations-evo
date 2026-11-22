@@ -1,4 +1,4 @@
-# Segunda d'Azeno v25 : scénario
+# Segunda d'Azeno v27 : scénario
 
 Positions relatives au prop de tête (sol), là où le dupe est collé.
 Étape 0 : coller le dupe. Tout est en place, verrous compris.
@@ -10,9 +10,9 @@ Après le collage de segunda-azeno-final.txt (276 props), ne rien poser d'autre,
 
 ## Étape 2 : Les voix
 
-Temps 2. Pose rapide des voix 6, 5, 3, 2, 1, puis El Que Queda. Courte pause aux sièges brisés 4, 7, 8, 9 : le silence de ceux qui ne sont pas revenus. Brume : 8 grandes fumées noires au ras du sol, cercle de 1 050 u. (Vitrine : cœur à 48.)
-- Poser : Lueurs > Violet à +1484 x, +1329 y, +416 z (plan de pose)
-- Poser : Magie > Lueur magique à +1469 x, +1308 y, +426 z (plan de pose)
+Temps 2. Pose rapide des voix 9, 5, 3, 2, 1, puis El Que Queda. Courte pause aux sièges brisés 4, 6, 7, 8 : le silence de ceux qui ne sont pas revenus. Brume : 8 grandes fumées noires au ras du sol, cercle de 1 050 u. (Vitrine : cœur à 48.)
+- Poser : Lueurs > Violet à +1484 x, +2461 y, +416 z (plan de pose)
+- Poser : Magie > Lueur magique à +1469 x, +2482 y, +426 z (plan de pose)
 - Poser : Lueurs > Violet à +1895 x, +1195 y, +416 z (plan de pose)
 - Poser : Magie > Lueur magique à +1895 x, +1170 y, +426 z (plan de pose)
 - Poser : Lueurs > Violet à +2561 x, +1679 y, +416 z (plan de pose)
@@ -54,7 +54,7 @@ Temps 4. (Vitrine : noir 1,8 s, tonnerre, secousse ; cœur à 90.) Retirer le ro
 
 ## Étape 5 : Les deux regards
 
-Temps 5. (Vitrine : noir 3 s, puis le portail s'ouvre, secousse forte ; cœur à 120 puis 70.) Retirer le bleu du centre et l'aura bleue, garder l'œil bleu, reposer l'œil rouge. Vraie lumière, lueur et Lueur magique Violet au centre ; Galaxie sous la voûte ; Feu violet au pied des voix 1, 2, 3, 5, 6. La voûte de stalactites et les fragments sortent du noir.
+Temps 5. (Vitrine : noir 3 s, puis le portail s'ouvre, secousse forte ; cœur à 120 puis 70.) Retirer le bleu du centre et l'aura bleue, garder l'œil bleu, reposer l'œil rouge. Vraie lumière, lueur et Lueur magique Violet au centre ; Galaxie sous la voûte ; Feu violet au pied des voix 1, 2, 3, 5, 9. La voûte de stalactites et les fragments sortent du noir.
 - Poser : Vraies lumières (MJ+) > Rouge à +1355 x, +1955 y, +1096 z (plan de pose)
 - Poser : Lueurs > Rouge à +1355 x, +1955 y, +1196 z (plan de pose)
 - Poser : Vraies lumières (MJ+) > Violet à +1895 x, +1895 y, +256 z (plan de pose)
@@ -65,7 +65,7 @@ Temps 5. (Vitrine : noir 3 s, puis le portail s'ouvre, secousse forte ; cœur à
 - Poser : Feu > Feu violet à +2703 x, +2158 y, +6 z (plan de pose)
 - Poser : Feu > Feu violet à +2703 x, +1632 y, +6 z (plan de pose)
 - Poser : Feu > Feu violet à +1895 x, +1045 y, +6 z (plan de pose)
-- Poser : Feu > Feu violet à +1395 x, +1207 y, +6 z (plan de pose)
+- Poser : Feu > Feu violet à +1395 x, +2583 y, +6 z (plan de pose)
 
 ## Étape 6 : Le silence
 
