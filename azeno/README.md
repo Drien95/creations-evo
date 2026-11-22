@@ -1,6 +1,9 @@
 # Segunda d'Azeno
 
-Version 25, partagée le 22/11/2026. Fait avec l’Atelier EVO.
+Version 27, partagée le 22/11/2026. Fait avec l’Atelier EVO.
+
+Piliers : El Que Queda (Badeni), 1 Azeno, 2 Azrael, 3 Dazan (joué par Adler), 5 Lazlo et 9 Zeno debout ; 4, 6 (Leonne), 7 et 8 brisés.
+Le film (film.mp4) date de la version 25 : les piliers 6 et 9 y ont encore leur ancien état.
 
 ## Fichiers
 
