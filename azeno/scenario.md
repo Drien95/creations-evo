@@ -1,4 +1,4 @@
-# Segunda d'Azeno v16 : scénario
+# Segunda d'Azeno v25 : scénario
 
 Positions relatives au prop de tête (sol), là où le dupe est collé.
 Étape 0 : coller le dupe. Tout est en place, verrous compris.
@@ -66,6 +66,10 @@ Temps 5. (Vitrine : noir 3 s, puis le portail s'ouvre, secousse forte ; cœur à
 - Poser : Feu > Feu violet à +2703 x, +1632 y, +6 z (plan de pose)
 - Poser : Feu > Feu violet à +1895 x, +1045 y, +6 z (plan de pose)
 - Poser : Feu > Feu violet à +1395 x, +1207 y, +6 z (plan de pose)
+
+## Étape 6 : Le silence
+
+Temps 6. Le cœur s'arrête, retombée ; 6 s plus tard, tous les sons de la scène sont coupés. Fin de la Segunda.
 - Poser : Fumée et brume > Grande fumée noire à +2245 x, +1895 y, +36 z (plan de pose)
 - Poser : Fumée et brume > Grande fumée noire à +2070 x, +2198 y, +176 z (plan de pose)
 - Poser : Fumée et brume > Grande fumée noire à +1720 x, +2198 y, +356 z (plan de pose)
@@ -91,7 +95,3 @@ Temps 5. (Vitrine : noir 3 s, puis le portail s'ouvre, secousse forte ; cœur à
 - Poser : Fumée et brume > Grande fumée noire à +2244 x, +591 y, +176 z (plan de pose)
 - Poser : Fumée et brume > Grande fumée noire à +3199 x, +1546 y, +356 z (plan de pose)
 - Poser : Magie > Trou noir à +1895 x, +1895 y, +64 z (plan de pose)
-
-## Étape 6 : Le silence
-
-Temps 6. Le cœur s'arrête, retombée ; 6 s plus tard, tous les sons de la scène sont coupés. Fin de la Segunda.

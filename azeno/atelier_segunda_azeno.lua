@@ -1,8 +1,8 @@
--- Atelier : film de « Segunda d'Azeno v16 », généré le 22/11/2026 04:02 (66 plans, 27.5 s).
+-- Atelier : film de « Segunda d'Azeno v25 », généré le 22/11/2026 05:21 (66 plans, 29.5 s).
 -- Pour GMod en solo (ou un serveur avec sv_allowcslua 1). Pas pour EVO : le Lua client y est bloqué.
 -- 1. Copie ce fichier dans garrysmod/lua/ et colle le dupe.
 -- 2. Console : lua_openscript_cl atelier_segunda_azeno.lua
--- 3. Vise le prop de tête (sol) et tape : atelier_film_origine
+-- 3. + du pavé numérique ou atelier_film_jouer : le build collé est retrouvé tout seul (atelier_film_origine : le chercher de nouveau)
 -- 4. atelier_film_jouer pour lancer, atelier_film_stop pour arrêter. Le HUD est masqué pendant le film.
 -- 5. Séquences : + et - du pavé numérique (ou atelier_suivant / atelier_precedent) passent d'une étape à l'autre.
 --    atelier_wipe : le build aspiré puis retiré ; atelier_wipe_sec : retiré d'un coup (chacune à taper deux fois).
@@ -71,8 +71,8 @@ local PLANS = {
   {nom = "L’œil bleu ·", pos = Vector(134.60, -502.30, 55.00), cible = Vector(-201.90, -753.40, 230.00), fov = 75, duree = 0.5, glisse = false, doux = false, etape = 4},
   {nom = "Les deux regards", pos = Vector(0.00, -560.00, 90.00), cible = Vector(0.00, 60.00, 1500.00), fov = 72, duree = 3.26, glisse = true, doux = true, etape = 5},
   {nom = "Les deux regards ·", pos = Vector(0.00, -420.00, 110.00), cible = Vector(0.00, 60.00, 1650.00), fov = 66, duree = 0.04, glisse = false, doux = true, etape = 5},
-  {nom = "Le recul", pos = Vector(-330.00, 1250.00, 85.00), cible = Vector(0.00, 0.00, 260.00), fov = 80, duree = 4.06, glisse = true, doux = true, etape = 5},
-  {nom = "Le recul ·", pos = Vector(-520.00, 1780.00, 105.00), cible = Vector(0.00, 0.00, 230.00), fov = 76, duree = 0.04, glisse = false, doux = true, etape = 5}
+  {nom = "Le recul", pos = Vector(-330.00, 1250.00, 85.00), cible = Vector(0.00, 0.00, 260.00), fov = 80, duree = 6.06, glisse = true, doux = true, etape = 6},
+  {nom = "Le recul ·", pos = Vector(-520.00, 1780.00, 105.00), cible = Vector(0.00, 0.00, 230.00), fov = 76, duree = 0.04, glisse = false, doux = true, etape = 6}
 }
 local SONS = {
   {t = 0, son = "ambient/levels/citadel/citadel_drone_loop1.wav", volume = 0.55, ton = 55, duree = 3},
@@ -212,9 +212,9 @@ local ANIMS = {
   {groupe = "œil bleu", type = "teinte", t = 11.2, duree = 0, r = 0, g = 0, b = 0, plein = false},
   {groupe = "œil bleu", type = "teinte", t = 16.2, duree = 0, r = 41, g = 97, b = 203, plein = false},
   {groupe = "œil bleu", type = "teinte", t = 21.6, duree = 0, r = 41, g = 97, b = 203, plein = false},
-  {groupe = "le vide revient", type = "apparait", t = 22.4, duree = 0.8},
-  {groupe = "le vide revient", type = "aspire", t = 23.6, duree = 0.9, vers = Vector(0.00, 0.00, 67.50), vitesse = 600},
-  {groupe = "le vide en Azeno", type = "apparait", t = 23.6, duree = 1}
+  {groupe = "le vide revient", type = "apparait", t = 23.4, duree = 0.8},
+  {groupe = "le vide revient", type = "aspire", t = 24.6, duree = 0.9, vers = Vector(0.00, 0.00, 67.50), vitesse = 600},
+  {groupe = "le vide en Azeno", type = "apparait", t = 24.6, duree = 1}
 }
 local ECRAN = {
   {type = "flash", t = 0, duree = 1.5, force = 8, r = 0, g = 0, b = 0},
@@ -237,29 +237,30 @@ local ECRAN = {
   {type = "secousse", t = 21.6, duree = 1.5, force = 14, r = 0, g = 0, b = 0},
   {type = "brouillard", t = 21.6, duree = 1, force = 8, r = 16, g = 7, b = 30, debut = 250, fin = 4200, densite = 0.8},
   {type = "etalonnage", t = 21.6, duree = 1, force = 8, r = 0, g = 0, b = 0, ar = 0.03, ag = 0, ab = 0.05, lum = 0, contraste = 1.22, saturation = 1.1},
-  {type = "brouillard", t = 22.4, duree = 0.3, force = 8, r = 11, g = 5, b = 21, debut = 175, fin = 3000, densite = 0.86},
-  {type = "etalonnage", t = 22.4, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.021, ag = 0, ab = 0.035, lum = -0.03, contraste = 1.22, saturation = 0.95},
-  {type = "brouillard", t = 22.8, duree = 0.3, force = 8, r = 6, g = 2, b = 10, debut = 87.5, fin = 1600, densite = 0.93},
-  {type = "etalonnage", t = 22.8, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.01, ag = 0, ab = 0.017, lum = -0.065, contraste = 1.22, saturation = 0.775},
-  {type = "brouillard", t = 23.2, duree = 0.3, force = 8, r = 0, g = 0, b = 0, debut = 0, fin = 200, densite = 1},
-  {type = "etalonnage", t = 23.2, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0, ag = 0, ab = 0, lum = -0.1, contraste = 1.22, saturation = 0.6},
-  {type = "brouillard", t = 23.57, duree = 0.3, force = 8, r = 2, g = 1, b = 4, debut = 31.25, fin = 700, densite = 0.975},
-  {type = "etalonnage", t = 23.57, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.004, ag = 0, ab = 0.006, lum = -0.088, contraste = 1.22, saturation = 0.662},
-  {type = "brouillard", t = 23.95, duree = 0.3, force = 8, r = 4, g = 2, b = 8, debut = 62.5, fin = 1200, densite = 0.95},
-  {type = "etalonnage", t = 23.95, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.007, ag = 0, ab = 0.013, lum = -0.075, contraste = 1.22, saturation = 0.725},
-  {type = "brouillard", t = 24.32, duree = 0.3, force = 8, r = 6, g = 3, b = 11, debut = 93.75, fin = 1700, densite = 0.925},
-  {type = "etalonnage", t = 24.32, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.011, ag = 0, ab = 0.019, lum = -0.062, contraste = 1.22, saturation = 0.788},
-  {type = "brouillard", t = 24.7, duree = 0.3, force = 8, r = 8, g = 4, b = 15, debut = 125, fin = 2200, densite = 0.9},
-  {type = "etalonnage", t = 24.7, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.015, ag = 0, ab = 0.025, lum = -0.05, contraste = 1.22, saturation = 0.85},
-  {type = "brouillard", t = 25.07, duree = 0.3, force = 8, r = 10, g = 4, b = 19, debut = 156.25, fin = 2700, densite = 0.875},
-  {type = "etalonnage", t = 25.07, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.019, ag = 0, ab = 0.031, lum = -0.038, contraste = 1.22, saturation = 0.913},
-  {type = "brouillard", t = 25.45, duree = 0.3, force = 8, r = 12, g = 5, b = 22, debut = 187.5, fin = 3200, densite = 0.85},
-  {type = "etalonnage", t = 25.45, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.022, ag = 0, ab = 0.038, lum = -0.025, contraste = 1.22, saturation = 0.975},
-  {type = "brouillard", t = 25.82, duree = 0.3, force = 8, r = 14, g = 6, b = 26, debut = 218.75, fin = 3700, densite = 0.825},
-  {type = "etalonnage", t = 25.82, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.026, ag = 0, ab = 0.044, lum = -0.012, contraste = 1.22, saturation = 1.038},
-  {type = "brouillard", t = 26.2, duree = 0.3, force = 8, r = 16, g = 7, b = 30, debut = 250, fin = 4200, densite = 0.8},
-  {type = "etalonnage", t = 26.2, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.03, ag = 0, ab = 0.05, lum = 0, contraste = 1.22, saturation = 1.1},
-  {type = "fondu", t = 26.4, duree = 2, force = 8, r = 0, g = 0, b = 0}
+  {type = "brouillard", t = 23.4, duree = 0.3, force = 8, r = 11, g = 5, b = 21, debut = 175, fin = 3000, densite = 0.86},
+  {type = "etalonnage", t = 23.4, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.021, ag = 0, ab = 0.035, lum = -0.03, contraste = 1.22, saturation = 0.95},
+  {type = "brouillard", t = 23.8, duree = 0.3, force = 8, r = 6, g = 2, b = 10, debut = 87.5, fin = 1600, densite = 0.93},
+  {type = "etalonnage", t = 23.8, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.01, ag = 0, ab = 0.017, lum = -0.065, contraste = 1.22, saturation = 0.775},
+  {type = "brouillard", t = 24.2, duree = 0.3, force = 8, r = 0, g = 0, b = 0, debut = 0, fin = 200, densite = 1},
+  {type = "etalonnage", t = 24.2, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0, ag = 0, ab = 0, lum = -0.1, contraste = 1.22, saturation = 0.6},
+  {type = "brouillard", t = 24.57, duree = 0.3, force = 8, r = 2, g = 1, b = 4, debut = 31.25, fin = 700, densite = 0.975},
+  {type = "etalonnage", t = 24.57, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.004, ag = 0, ab = 0.006, lum = -0.088, contraste = 1.22, saturation = 0.662},
+  {type = "filaments", t = 24.6, duree = 3, force = 8, r = 0, g = 0, b = 0, depuis = {Vector(-3484.50, -3484.50, 1417.00), Vector(-3484.50, 3484.50, 1417.00), Vector(3484.50, -3484.50, 1417.00), Vector(3484.50, 3484.50, 1417.00)}, vers = Vector(0.00, 0.00, 97.50), nombre = 6, largeur = 34, periode = 0.4, lr = 110, lg = 40, lb = 190},
+  {type = "brouillard", t = 24.95, duree = 0.3, force = 8, r = 4, g = 2, b = 8, debut = 62.5, fin = 1200, densite = 0.95},
+  {type = "etalonnage", t = 24.95, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.007, ag = 0, ab = 0.013, lum = -0.075, contraste = 1.22, saturation = 0.725},
+  {type = "brouillard", t = 25.32, duree = 0.3, force = 8, r = 6, g = 3, b = 11, debut = 93.75, fin = 1700, densite = 0.925},
+  {type = "etalonnage", t = 25.32, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.011, ag = 0, ab = 0.019, lum = -0.062, contraste = 1.22, saturation = 0.788},
+  {type = "brouillard", t = 25.7, duree = 0.3, force = 8, r = 8, g = 4, b = 15, debut = 125, fin = 2200, densite = 0.9},
+  {type = "etalonnage", t = 25.7, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.015, ag = 0, ab = 0.025, lum = -0.05, contraste = 1.22, saturation = 0.85},
+  {type = "brouillard", t = 26.07, duree = 0.3, force = 8, r = 10, g = 4, b = 19, debut = 156.25, fin = 2700, densite = 0.875},
+  {type = "etalonnage", t = 26.07, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.019, ag = 0, ab = 0.031, lum = -0.038, contraste = 1.22, saturation = 0.913},
+  {type = "brouillard", t = 26.45, duree = 0.3, force = 8, r = 12, g = 5, b = 22, debut = 187.5, fin = 3200, densite = 0.85},
+  {type = "etalonnage", t = 26.45, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.022, ag = 0, ab = 0.038, lum = -0.025, contraste = 1.22, saturation = 0.975},
+  {type = "brouillard", t = 26.82, duree = 0.3, force = 8, r = 14, g = 6, b = 26, debut = 218.75, fin = 3700, densite = 0.825},
+  {type = "etalonnage", t = 26.82, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.026, ag = 0, ab = 0.044, lum = -0.012, contraste = 1.22, saturation = 1.038},
+  {type = "brouillard", t = 27.2, duree = 0.3, force = 8, r = 16, g = 7, b = 30, debut = 250, fin = 4200, densite = 0.8},
+  {type = "etalonnage", t = 27.2, duree = 0.3, force = 8, r = 0, g = 0, b = 0, ar = 0.03, ag = 0, ab = 0.05, lum = 0, contraste = 1.22, saturation = 1.1},
+  {type = "fondu", t = 28.4, duree = 2, force = 8, r = 0, g = 0, b = 0}
 }
 local PROPS = {   -- les props animés, retrouvés dans le dupe collé par leur modèle et leur place
   {groupe = "El Que Queda", idx = 0, model = "models/hunter/blocks/cube2x8x1.mdl", pos = Vector(0.00, 760.00, 273.22), ang = Angle(0.000, 0.000, 90.000)},
@@ -520,41 +521,59 @@ local EFFETS = {    -- lumières et particules du catalogue EVO (posées à la m
   {type = "particule", pos = Vector(808.40, -262.70, 9.50), etape = 5, note = "les feux violets", r = 180, g = 90, b = 255, taille = 60, effet = "[1]_campfire_purple"},
   {type = "particule", pos = Vector(0.00, -850.00, 9.50), etape = 5, note = "les feux violets", r = 180, g = 90, b = 255, taille = 60, effet = "[1]_campfire_purple"},
   {type = "particule", pos = Vector(-499.60, -687.70, 9.50), etape = 5, note = "les feux violets", r = 180, g = 90, b = 255, taille = 60, effet = "[1]_campfire_purple"},
-  {type = "particule", pos = Vector(350.00, 0.00, 40.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(175.00, 303.10, 180.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-175.00, 303.10, 360.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-350.00, 0.00, 40.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-175.00, -303.10, 180.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(175.00, -303.10, 360.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(676.10, 181.20, 180.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(181.20, 676.10, 360.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-495.00, 495.00, 40.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-676.10, -181.20, 180.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-181.20, -676.10, 360.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(495.00, -495.00, 40.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(909.30, 525.00, 360.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(0.00, 1050.00, 40.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-909.30, 525.00, 180.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-909.30, -525.00, 360.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-0.00, -1050.00, 40.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(909.30, -525.00, 180.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(954.60, 954.60, 40.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-349.40, 1304.00, 180.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-1304.00, 349.40, 360.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(-954.60, -954.60, 40.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(349.40, -1304.00, 180.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(1304.00, -349.40, 360.00), etape = 5, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
-  {type = "particule", pos = Vector(0.00, 0.00, 67.50), etape = 5, note = "le vide en Azeno", r = 40, g = 20, b = 60, taille = 120, effet = "[5]black_hole_micro"}
+  {type = "particule", pos = Vector(350.00, 0.00, 40.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(175.00, 303.10, 180.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-175.00, 303.10, 360.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-350.00, 0.00, 40.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-175.00, -303.10, 180.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(175.00, -303.10, 360.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(676.10, 181.20, 180.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(181.20, 676.10, 360.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-495.00, 495.00, 40.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-676.10, -181.20, 180.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-181.20, -676.10, 360.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(495.00, -495.00, 40.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(909.30, 525.00, 360.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(0.00, 1050.00, 40.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-909.30, 525.00, 180.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-909.30, -525.00, 360.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-0.00, -1050.00, 40.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(909.30, -525.00, 180.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(954.60, 954.60, 40.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-349.40, 1304.00, 180.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-1304.00, 349.40, 360.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(-954.60, -954.60, 40.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(349.40, -1304.00, 180.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(1304.00, -349.40, 360.00), etape = 6, note = "le vide revient", r = 25, g = 22, b = 28, taille = 300, effet = "[1]big_smoke"},
+  {type = "particule", pos = Vector(0.00, 0.00, 67.50), etape = 6, note = "le vide en Azeno", r = 40, g = 20, b = 60, taille = 120, effet = "[5]black_hole_micro"}
 }
 local PCF = {"particles/fire_01.pcf", "particles/watcher_map.pcf", "particles/watcher_stuff.pcf", "particles/ali_aura.pcf"}
 for _, f in ipairs(PCF) do if file.Exists(f, "GAME") then game.AddParticles(f) end end
 for _, e in ipairs(EFFETS) do if e.effet then PrecacheParticleSystem(e.effet) end end
+-- 22/11 : toutes les particules du script, gardées hors du fichier : un rechargement ou un wipe les retire toutes
+-- (sinon celles d'avant le rechargement restaient pour toujours, le wipe ne les connaissait plus)
+local function ps_tout_retirer()
+  for p in pairs(ATELIER_PS or {}) do if p:IsValid() then p:StopEmissionAndDestroyImmediately() end end
+  ATELIER_PS = {}
+end
+ps_tout_retirer()
+local function ps_creer(nom, pos)
+  local p = CreateParticleSystemNoEntity and CreateParticleSystemNoEntity(nom, pos)
+  if p then ATELIER_PS[p] = true end
+  return p
+end
 local etape_aff = 0
 local origine, debut, plan_aff, son_i, silence
 local film_t = 0
 
 -- ---- animations : même règle que moteur/anim.py et l'éditeur
 local function clamp(u) if u < 0 then return 0 elseif u > 1 then return 1 end return u end
+local BOITE_MIN, BOITE_MAX = Vector(-3940.25, -3940.55, -148.50), Vector(3940.25, 3940.55, 2043.45)           -- la boîte du build (avant collage), marge de 150 u
+local function ici()                            -- 22/11 : nuit, brouillard et teinte seulement dans la salle (le film : toujours)
+  if debut or not (BOITE_MIN and origine) then return true end
+  local p = EyePos() - origine + TETE
+  return p.x >= BOITE_MIN.x and p.y >= BOITE_MIN.y and p.z >= BOITE_MIN.z and p.x <= BOITE_MAX.x and p.y <= BOITE_MAX.y and p.z <= BOITE_MAX.z
+end
 local function rot(v, axe, deg)                 -- Rodrigues
   local n = math.sqrt(axe.x * axe.x + axe.y * axe.y + axe.z * axe.z); if n == 0 then n = 1 end
   local kx, ky, kz = axe.x / n, axe.y / n, axe.z / n
@@ -635,7 +654,7 @@ local function ecran(t)
   local r, g, b, al, sec, vol = 0, 0, 0, 0, 0, 1
   for _, e in ipairs(ECRAN) do
     local u = (t - e.t) / e.duree
-    if e.t < LIMITE and u >= 0 and u <= 1 and e.type ~= "brouillard" and e.type ~= "etalonnage" then
+    if e.t < LIMITE and u >= 0 and u <= 1 and e.type ~= "brouillard" and e.type ~= "etalonnage" and e.type ~= "filaments" then
       if e.type == "secousse" then sec = sec + e.force * (1 - u)
       elseif e.type == "silence" then vol = math.min(vol, math.max(0, 1 - math.min(u * e.duree, (1 - u) * e.duree) / 0.3))
       else
@@ -650,7 +669,7 @@ local function ecran(t)
   return r, g, b, al, sec, vol
 end
 local function brouillard_actif()              -- même règle que moteur/anim.py (brouillard)
-  if not debut and seq == nil then return nil end
+  if not debut and seq == nil or not ici() then return nil end
   local b
   for _, e in ipairs(ECRAN) do if e.type == "brouillard" and e.t <= film_t and e.t < LIMITE then b = e end end
   if b and b.densite > 0 then return b end
@@ -711,7 +730,31 @@ local function delier()
   animes = {}
 end
 
-local function effets_maj(t)                     -- même pose que les props (note = groupe), visibles dès leur étape
+local TRAINE = {}                                    -- fumées laissées par les particules qui bougent (éteintes au bout de 4 s)
+local function ps_suivre(e, w)                         -- la particule de l'effet e suit le point w
+  if not (e.ps and e.ps:IsValid()) then e.ps = ps_creer(e.effet, w); e.ps_pos, e.ps_t = w, RealTime() end
+  if e.ps and e.ps:IsValid() then
+    if e.ps_pos and w:DistToSqr(e.ps_pos) > 6400 and RealTime() - e.ps_t > 0.2 then
+      -- 22/11 : la fumée déjà émise ne suit pas le système. Elle reste et s'éteint ; une nouvelle bouffée part d'ici
+      e.ps:StopEmission(); TRAINE[#TRAINE + 1] = {ps = e.ps, fin = RealTime() + 4}
+      e.ps = ps_creer(e.effet, w); e.ps_pos, e.ps_t = w, RealTime()
+    end
+    if e.ps and e.ps:IsValid() then e.ps:SetControlPoint(0, w) end
+  end
+end
+local function lumiere(k, e, w, alpha, ech)            -- lueur ou lumière de l'effet e en w (rafraîchie à chaque image)
+  local d = DynamicLight(7300 + k)
+  if d then
+    d.pos = w; d.r, d.g, d.b = e.r, e.g, e.b; d.decay = 0; d.dietime = CurTime() + 0.2
+    if e.type == "lueur" then d.brightness = 1 * alpha; d.size = e.taille * 2.5 * ech
+    else d.brightness = 2 * alpha; d.size = 1100 * ech end
+  end
+end
+local function effets_maj(t)
+  for i = #TRAINE, 1, -1 do
+    local x = TRAINE[i]
+    if RealTime() > x.fin then if x.ps:IsValid() then x.ps:StopEmissionAndDestroyImmediately() end; table.remove(TRAINE, i) end
+  end                     -- même pose que les props (note = groupe), visibles dès leur étape
   for k, e in ipairs(EFFETS) do
     local p, _, ech, alpha = pose(e.note, k, e.pos, t)
     local vu = (debut ~= nil or seq ~= nil) and origine ~= nil and etape_aff >= e.etape and alpha > 0
@@ -719,19 +762,18 @@ local function effets_maj(t)                     -- même pose que les props (no
     e.w, e.alpha, e.ech = w, alpha, ech
     if e.type == "particule" then
       if vu then
-        if not (e.ps and e.ps:IsValid()) then e.ps = CreateParticleSystemNoEntity(e.effet, w) end
-        if e.ps and e.ps:IsValid() then e.ps:SetControlPoint(0, w) end
+        ps_suivre(e, w)
       elseif e.ps then
-        if e.ps:IsValid() then e.ps:StopEmissionAndDestroyImmediately() end
+        if e.ps:IsValid() then
+          if e.ps_pos and e.w0 and e.ps_pos:DistToSqr(e.w0) > 6400 then   -- arrivé au bout de son trajet : il s'éteint en douceur
+            e.ps:StopEmission(); TRAINE[#TRAINE + 1] = {ps = e.ps, fin = RealTime() + 4}
+          else e.ps:StopEmissionAndDestroyImmediately() end
+        end
         e.ps = nil
       end
+      if vu and not e.w0 then e.w0 = w end
     elseif vu then
-      local d = DynamicLight(7300 + k)
-      if d then
-        d.pos = w; d.r, d.g, d.b = e.r, e.g, e.b; d.decay = 0; d.dietime = CurTime() + 0.2
-        if e.type == "lueur" then d.brightness = 1 * alpha; d.size = e.taille * 2.5 * ech
-        else d.brightness = 2 * alpha; d.size = 1100 * ech end
-      end
+      lumiere(k, e, w, alpha, ech)
     end
   end
 end
@@ -749,8 +791,10 @@ end)
 local function effets_fin()
   for _, e in ipairs(EFFETS) do
     if e.ps and e.ps:IsValid() then e.ps:StopEmissionAndDestroyImmediately() end
-    e.ps, e.w = nil, nil
+    e.ps, e.w, e.w0, e.ps_pos = nil, nil, nil, nil
   end
+  for _, x in ipairs(TRAINE) do if x.ps:IsValid() then x.ps:StopEmissionAndDestroyImmediately() end end
+  TRAINE = {}
 end
 local function couper()
   for i = 1, (son_i or 1) - 1 do LocalPlayer():StopSound(SONS[i].son) end
@@ -850,8 +894,8 @@ local SEQ = {
   [2] = {t = 2.6, lim = 9.4},
   [3] = {t = 10.3, lim = 14.4},
   [4] = {t = 15.299, lim = 18.6},
-  [5] = {t = 20.099, lim = 26.4},
-  [6] = {t = 27.499, lim = 1e+09}
+  [5] = {t = 20.099, lim = 23.399},
+  [6] = {t = 23.399, lim = 28.4}
 }
 local N_SEQ = 6
 local NOMS = {
@@ -893,18 +937,142 @@ local MODELES = {   -- les modèles du build (wipe)
   ["models/props_mining/stalactite_static04.mdl"] = true
 }
 local CENTRE, RAYON = Vector(0.00, 0.00, 1.50), 5208
+local REPERES = {   -- 22/11 : props du build (modèles rares) pour le retrouver tout seul une fois collé
+  {model = "models/hunter/plates/plate32x32.mdl", pos = Vector(-1895.00, -1895.00, 3.75)},
+  {model = "models/hunter/plates/plate025x7.mdl", pos = Vector(0.00, 723.68, 296.00)},
+  {model = "models/hunter/tubes/circle4x4.mdl", pos = Vector(0.00, 760.00, 10.00)},
+  {model = "models/hunter/blocks/cube2x8x1.mdl", pos = Vector(0.00, 760.00, 273.22)},
+  {model = "models/propper/hueco_mundo_v1/huecomundosetails129.mdl", pos = Vector(-2194.84, 2285.11, 827.86)},
+  {model = "models/propper/hueco_mundo_v1/huecomundosetails128.mdl", pos = Vector(-2179.04, -2122.32, 883.20)},
+  {model = "models/propper/hueco_mundo_v1/huecomundosetails176.mdl", pos = Vector(-963.87, -2796.53, 760.19)},
+  {model = "models/propper/hueco_mundo_v1/huecomundosetails197_2.mdl", pos = Vector(-342.88, -1805.36, 718.91)}
+}
+local function reperes_vus()                  -- les props de la carte aux modèles des repères, par modèle (une seule passe)
+  local voulus, par = {}, {}
+  for _, r in ipairs(REPERES) do voulus[r.model] = true; par[r.model] = {} end
+  for _, e in ipairs(ents.GetAll()) do
+    local m = IsValid(e) and string.lower(e:GetModel() or "") or ""
+    if voulus[m] and #par[m] < 200 then par[m][#par[m] + 1] = e:GetPos() end
+  end
+  return par
+end
+local function score(o, par)                  -- combien de repères sont à leur place si le prop de tête est en o
+  local s = 0
+  for _, r in ipairs(REPERES) do
+    local q = o + (r.pos - TETE)
+    for _, p in ipairs(par[r.model]) do if p:DistToSqr(q) < 400 then s = s + 1; break end end
+  end
+  return s
+end
+local function besoin() return math.min(3, #REPERES) end
+local function chercher_origine()             -- le build collé le plus complet (le plus proche de ce que tu vises à égalité)
+  if #REPERES == 0 then return nil end
+  local par = reperes_vus()
+  local vise = LocalPlayer():GetEyeTrace().HitPos
+  local best, bs, bd
+  for _, r in ipairs(REPERES) do
+    for _, p in ipairs(par[r.model]) do
+      local o = p - (r.pos - TETE)
+      local s, d = score(o, par), o:DistToSqr(vise)
+      if not best or s > bs or (s == bs and d < bd) then best, bs, bd = o, s, d end
+    end
+  end
+  if best and bs >= besoin() then return best, bs end
+  return nil, bs or 0
+end
+local function assurer_origine(forcer)        -- true si le build est trouvé ; refait la recherche s'il a bougé ou disparu
+  if #REPERES == 0 then return origine ~= nil end
+  if origine and not forcer and score(origine, reperes_vus()) >= besoin() then return true end
+  local o, s = chercher_origine()
+  if o then
+    origine = o
+    print(("[Atelier] build trouvé (%d / %d repères à leur place)"):format(s, #REPERES))
+    return true
+  end
+  origine = nil
+  print(("[Atelier] build introuvable près de toi (%d / %d repères). Colle le dupe sans le tourner, approche-toi, puis recommence."):format(s or 0, #REPERES))
+  return false
+end
+concommand.Add("atelier_film_origine", function(ply)    -- facultatif : + et atelier_film_jouer trouvent le build seuls
+  if assurer_origine(true) then return end
+  if #REPERES > 0 then return end
+  local tr = ply:GetEyeTrace()                          -- script sans repères (ancien build) : le prop visé
+  if not IsValid(tr.Entity) then print("[Atelier] vise le prop de tête (sol) puis recommence") return end
+  origine = tr.Entity:GetPos()
+  print("[Atelier] origine posée sur " .. tr.Entity:GetModel())
+end)
+concommand.Add("atelier_film_jouer", function()
+  if not assurer_origine(false) then
+    if #REPERES == 0 then print("[Atelier] d'abord : atelier_film_origine en visant le prop de tête (sol)") end
+    return
+  end
+  demarrer()
+end)
 local function seq_sons_couper()
   for _, x in ipairs(SONS) do
     if x.joue then LocalPlayer():StopSound(x.son) end
     x.joue = nil                                -- nil : pas encore joué sur cette étape ; true : joue ; false : fini
   end
 end
+-- 22/11 (Adrien) : une autre scène liée aux touches + et - (ancienne vitrine azeno_suivant) tournait en même temps :
+-- ses lumières et particules (côté serveur) et son brouillard sur toute la carte restaient après le wipe.
+local function autre_scene()                  -- la commande liée à + ou -, si ce n'est pas la nôtre
+  if not (input and input.LookupKeyBinding) then return nil end
+  for _, k in ipairs({KEY_PAD_PLUS, KEY_PAD_MINUS}) do
+    local b = input.LookupKeyBinding(k) or ""
+    if b ~= "" and not string.find(b, "atelier_", 1, true) then return b end
+  end
+end
+local function autres_scenes_arreter()        -- l'ancienne vitrine et le cinéma Azeno (addons azeno_vitrine, azeno_cine) : tués
+  local n, l = 0, {}
+  if hook and hook.GetTable then                -- leurs hooks côté client (brouillard, teinte, lueurs, ciel), tous événements confondus
+    for ev, t in pairs(hook.GetTable()) do
+      for nom in pairs(t) do if type(nom) == "string" and string.sub(nom, 1, 6) == "azeno_" then l[#l + 1] = {ev, nom} end end
+    end
+    for _, x in ipairs(l) do hook.Remove(x[1], x[2]); n = n + 1 end
+  end
+  if timer and timer.Exists then
+    for _, tn in ipairs({"azeno_fond", "azeno_teinte", "azeno_cine_ordre"}) do if timer.Exists(tn) then timer.Remove(tn); n = n + 1 end end
+  end
+  local b = autre_scene()
+  if n > 0 or (b and string.find(b, "azeno_", 1, true)) then
+    RunConsoleCommand("azeno_stop"); RunConsoleCommand("azeno_wipe")   -- côté serveur : ses lumières et particules, sa phase
+    print(("[Atelier] ancienne vitrine Azeno arrêtée (%d hooks et minuteurs retirés, azeno_stop et azeno_wipe lancés)"):format(n))
+  end
+end
+-- 22/11 (Adrien) : en séquences, le fond sonore (sons en boucle « loop ») tient toute l'étape et ne s'entend que dans la salle,
+-- comme l'ancienne vitrine : la dernière boucle commencée (même à une étape d'avant) joue, à son ton, en fondu à l'entrée et à la sortie.
+local fond, fond_son
+local function est_boucle(x) return string.find(string.lower(x.son), "loop", 1, true) ~= nil end
+local function fond_couper(doux)
+  if fond then if doux then fond:FadeOut(1.5) else fond:Stop() end end
+  if not doux then fond, fond_son = nil, nil end
+end
+local function fond_maj(t)
+  local b
+  for _, x in ipairs(SONS) do if est_boucle(x) and x.t <= t and x.t < LIMITE then b = x end end
+  if not (b and ici() and not silence and CreateSound) then
+    if fond and fond:IsPlaying() then fond:FadeOut(1.5) end
+    return
+  end
+  if fond_son ~= b.son then fond_couper(false); fond = CreateSound(LocalPlayer(), b.son); fond_son = b.son end
+  if not fond:IsPlaying() then fond:PlayEx(b.volume, b.ton or 100) end
+  fond:ChangeVolume(b.volume, 1); fond:ChangePitch(b.ton or 100, 1.5)
+end
+local function sons_tout_couper()            -- 22/11 : musique et sons du build, même lancés par un ancien chargement du script
+  fond_couper(false)
+  for _, x in ipairs(SONS) do LocalPlayer():StopSound(x.son); x.joue = nil end
+  RunConsoleCommand("stopsound")
+end
 local function seq_fin()
   if seq == nil then return end
-  seq_sons_couper(); seq = nil; LIMITE = 1e9; delier(); effets_fin()
+  seq_sons_couper(); fond_couper(false); seq = nil; LIMITE = 1e9; delier(); effets_fin()
 end
 local function seq_aller(k)
-  if not origine then print("[Atelier] d'abord : atelier_film_origine en visant le prop de tête ({sol})") return end
+  if seq == nil and not assurer_origine(false) then             -- au départ : le build est retrouvé seul
+    if #REPERES == 0 then print("[Atelier] d'abord : atelier_film_origine en visant le prop de tête (sol)") end
+    return
+  end
   if debut then couper(); fin_tournage(false, "séquences") end
   k = math.max(0, math.min(N_SEQ, k))
   seq_sons_couper()
@@ -914,8 +1082,18 @@ local function seq_aller(k)
   print("[Atelier] " .. m)
   if notification then notification.AddLegacy(m, NOTIFY_GENERIC, 4) end
 end
+local wipe
+local seq_controle = 0
 local function seq_tic()
-  if seq == nil then return end
+  if seq == nil or wipe then return end           -- pendant le wipe, les effets suivent l'aspiration (wipe_tic)
+  if #REPERES > 0 and origine and RealTime() > seq_controle then   -- 22/11 : build retiré autrement que par atelier_wipe
+    seq_controle = RealTime() + 1
+    if score(origine, reperes_vus()) == 0 then
+      seq_fin(); ps_tout_retirer(); sons_tout_couper(); origine = nil
+      print("[Atelier] build retiré : séquence arrêtée, effets, nuit, musique et sons retirés")
+      return
+    end
+  end
   local t = SEQ[seq].t + (RealTime() - seq_debut); film_t = t
   local _, _, _, _, _, vol = ecran(t)
   if vol < 0.5 and not silence then
@@ -924,10 +1102,12 @@ local function seq_tic()
   elseif vol >= 0.5 then silence = false end
   for _, x in ipairs(SONS) do
     if x.joue and x.duree > 0 and t >= x.t + x.duree then LocalPlayer():StopSound(x.son); x.joue = false end
-    if x.joue == nil and not silence and x.t >= SEQ[seq].t and x.t < LIMITE and x.t <= t then
-      x.joue = true; LocalPlayer():EmitSound(x.son, 0, x.ton or 100, x.volume, CHAN_STATIC)
+    if x.joue == nil and not silence and not est_boucle(x) and x.t >= SEQ[seq].t and x.t < LIMITE and x.t <= t then
+      x.joue = true                               -- hors de la salle : marqué joué, mais pas entendu
+      if ici() then LocalPlayer():EmitSound(x.son, 0, x.ton or 100, x.volume, CHAN_STATIC) end
     end
   end
+  fond_maj(t)
   effets_maj(t)
 end
 local function seq_vue(p, a, fov)             -- la secousse de l'étape, sur ta propre vue
@@ -946,9 +1126,10 @@ local function confirmer(nom)
   print("[Atelier] " .. nom .. " : retape-la dans les 10 s pour confirmer. Tous tes props seront retirés (gmod_cleanup).")
   return false
 end
-local wipe
 local function nettoyer()
-  RunConsoleCommand("gmod_cleanup")
+  RunConsoleCommand("gmod_cleanup"); origine = nil              -- le prochain collage sera retrouvé de nouveau
+  seq_fin(); effets_fin(); ps_tout_retirer(); sons_tout_couper()  -- 22/11 : fumées, lueurs, trous noirs, musique et sons aussi
+  autres_scenes_arreter()
   print("[Atelier] build retiré (gmod_cleanup)")
 end
 local function dessiner_wipe(self)
@@ -975,10 +1156,21 @@ concommand.Add("atelier_wipe_sec", function()
   tout_arreter(); nettoyer()
 end)
 concommand.Add("atelier_wipe", function()
-  if not origine then print("[Atelier] d'abord : atelier_film_origine en visant le prop de tête ({sol})") return end
   if wipe or not confirmer("atelier_wipe") then return end
-  tout_arreter()
-  local c = origine + (CENTRE - TETE)
+  if debut then couper(); fin_tournage(false, "wipe") end
+  seq_sons_couper()                             -- 22/11 : la séquence reste affichée, ses effets sont aspirés avec le build
+  if #REPERES > 0 and not (origine and score(origine, reperes_vus()) >= besoin()) then origine = chercher_origine() end
+  local c = origine and (origine + (CENTRE - TETE))
+  if not c then                                 -- 22/11 : build pas retrouvé : centre des props du build autour de toi
+    local n, s, bas = 0, Vector(0, 0, 0), nil
+    for _, e in ipairs(ents.FindInSphere(LocalPlayer():GetPos(), RAYON * 2 + 1000)) do
+      if IsValid(e) and MODELES[string.lower(e:GetModel() or "")] then
+        local p = e:GetPos(); n = n + 1; s = s + p; bas = bas and math.min(bas, p.z) or p.z
+      end
+    end
+    if n == 0 then print("[Atelier] wipe : aucun prop du build près de toi, retrait direct"); nettoyer() return end
+    c = Vector(s.x / n, s.y / n, bas)
+  end
   wipe = {debut = RealTime(), c = c, vitesse = RAYON / 2.5, ents = {}}
   for _, e in ipairs(ents.FindInSphere(c, RAYON + 200)) do
     if IsValid(e) and MODELES[string.lower(e:GetModel() or "")] then
@@ -988,13 +1180,46 @@ concommand.Add("atelier_wipe", function()
     end
   end
   if PrecacheParticleSystem then PrecacheParticleSystem("[5]black_hole_micro") end
-  wipe.ps = CreateParticleSystemNoEntity and CreateParticleSystemNoEntity("[5]black_hole_micro", c + Vector(0, 0, 60)) or nil
+  wipe.ps = ps_creer("[5]black_hole_micro", c + Vector(0, 0, 60))
+  wipe.fx = {}
+  for k, e in ipairs(EFFETS) do
+    if e.w then wipe.fx[#wipe.fx + 1] = {k = k, e = e, p0 = e.w, a0 = e.alpha or 1, ech0 = e.ech or 1, d = e.w:Distance(c)} end
+  end
   wipe.fin = (RAYON + 200) / wipe.vitesse + 1.5
-  print(("[Atelier] wipe : %d props aspirés vers le centre"):format(#wipe.ents))
+  print(("[Atelier] wipe : %d props et %d effets aspirés vers le centre"):format(#wipe.ents, #wipe.fx))
 end)
+local function wipe_fx(t)                     -- les effets visibles filent vers le centre comme les props
+  for _, f in ipairs(wipe.fx) do
+    local e = f.e
+    local v = clamp((t - f.d / wipe.vitesse) / 1.2); local q = v * v
+    local w = f.p0 + (wipe.c - f.p0) * q
+    if v >= 1 then
+      if e.ps and e.ps:IsValid() then e.ps:StopEmission(); TRAINE[#TRAINE + 1] = {ps = e.ps, fin = RealTime() + 4} end
+      e.ps = nil; e.w = nil
+    elseif e.type == "particule" then
+      ps_suivre(e, w); e.w = w
+    else
+      e.w, e.alpha, e.ech = w, f.a0 * (1 - q), f.ech0 * (1 - 0.9 * q)
+      lumiere(f.k, e, w, e.alpha, e.ech)
+    end
+  end
+  for i = #TRAINE, 1, -1 do
+    local x = TRAINE[i]
+    if RealTime() > x.fin then if x.ps:IsValid() then x.ps:StopEmissionAndDestroyImmediately() end; table.remove(TRAINE, i) end
+  end
+end
+local function wipe_force(raison)             -- 22/11 : le wipe ne reste jamais à moitié (sinon la séquence restait figée)
+  print("[Atelier] wipe terminé de force (" .. tostring(raison) .. ")")
+  if wipe and not wipe.nettoye then RunConsoleCommand("gmod_cleanup") end
+  if wipe then for _, e in ipairs(wipe.ents) do if IsValid(e) then e.RenderOverride = nil; e.atelier_wipe = nil end end end
+  wipe = nil; origine = nil
+  seq_fin(); effets_fin(); ps_tout_retirer(); sons_tout_couper(); autres_scenes_arreter()
+end
 local function wipe_tic()
   if not wipe then return end
   local t = RealTime() - wipe.debut
+  if t > wipe.fin + 10 then return wipe_force("trop long") end
+  if not wipe.nettoye then wipe_fx(t) end
   if not wipe.nettoye and t >= wipe.fin then
     nettoyer(); wipe.nettoye = t
     if wipe.ps and wipe.ps:IsValid() then wipe.ps:StopEmission() end
@@ -1005,6 +1230,50 @@ local function wipe_tic()
     wipe = nil
   end
 end
+-- ---- Filaments (écran « filaments ») : des traînées qui filent de points de la salle vers le centre, en accélérant
+local FIL_MAT, FIL_LUEUR = Material("trails/smoke"), Material("effects/laser1")
+local function fil_point(a, b, u, k, i)       -- trajet un peu tordu, de plus en plus droit près du centre
+  local d = b - a
+  local s = math.sin(u * math.pi) * (1 - u) * d:Length() * 0.12
+  return a + d * u + Vector(math.sin(i * 12.9898 + k), math.cos(i * 78.233 + k), 0.5 * math.sin(i * 37.719 + k)) * s
+end
+local function fil_dessiner(e, t)
+  local env = math.min(1, (t - e.t) / 0.3, (e.t + e.duree - t) / 0.3)
+  local b, pts = origine + (e.vers - TETE), {}
+  for k, c0 in ipairs(e.depuis) do
+    local a = origine + (c0 - TETE)
+    for i = 1, e.nombre do
+      local ph = ((t - e.t) / e.periode + (i - 1) / e.nombre + k * 0.37) % 1
+      local u1 = ph * ph; local u0 = math.max(0, u1 - 0.35)
+      for j = 0, 8 do pts[j] = fil_point(a, b, u0 + (u1 - u0) * j / 8, k, i) end
+      render.SetMaterial(FIL_MAT); render.StartBeam(9)
+      for j = 0, 8 do render.AddBeam(pts[j], e.largeur * (0.3 + 0.7 * j / 8), j / 8, Color(e.r, e.g, e.b, math.floor(230 * env))) end
+      render.EndBeam()
+      if e.lr then
+        render.SetMaterial(FIL_LUEUR); render.StartBeam(9)
+        for j = 0, 8 do render.AddBeam(pts[j], e.largeur * 0.15, j / 8, Color(e.lr, e.lg, e.lb, math.floor(255 * env * j / 8))) end
+        render.EndBeam()
+      end
+    end
+  end
+end
+hook.Add("PostDrawTranslucentRenderables", "atelier_filaments", function(_, ciel)
+  if ciel or not (debut or seq ~= nil) or not origine then return end
+  local t, vu = film_t, false
+  for _, e in ipairs(ECRAN) do
+    if e.type == "filaments" and e.t < LIMITE and t >= e.t and t <= e.t + e.duree then
+      if not vu then render.FogMode(MATERIAL_FOG_NONE); vu = true end   -- visibles dans la nuit de la salle
+      fil_dessiner(e, t)
+    end
+  end
+  if vu and not brouillard(1) then render.FogMode(MATERIAL_FOG_NONE) end
+end)
+if timer then timer.Simple(0, function()
+  autres_scenes_arreter()                       -- 22/11 (Adrien) : une seule scène à la fois, la nôtre
+  local b = autre_scene()
+  if b then print("[Atelier] attention : + ou - du pavé est lié à « " .. b .. " ». Cette autre scène tourne en même temps que la nôtre"
+    .. " (lumières, brouillard). Tape : unbind KP_PLUS ; unbind KP_MINUS") end
+end) end
 concommand.Add("atelier_suivant", function() seq_aller(seq == nil and 1 or seq + 1) end)
 concommand.Add("atelier_precedent", function() if seq ~= nil then seq_aller(seq - 1) end end)
 concommand.Add("atelier_etape", function(_, _, args)
@@ -1013,7 +1282,39 @@ concommand.Add("atelier_etape", function(_, _, args)
   if x and y and z then origine = Vector(x, y, z) end
   seq_aller(math.floor(k))
 end)
-concommand.Add("atelier_seq_stop", function() seq_fin(); print("[Atelier] séquences arrêtées") end)
+concommand.Add("atelier_seq_stop", function()       -- tout arrêter : séquence, film, wipe, particules, nuit
+  if debut then couper(); fin_tournage(false, "arrêté") end
+  if wipe then wipe_force("atelier_seq_stop") else seq_fin(); effets_fin(); ps_tout_retirer(); sons_tout_couper(); autres_scenes_arreter() end
+  print("[Atelier] séquences arrêtées : effets, nuit, musique et sons retirés")
+end)
+-- atelier_diag : ce qui est encore actif (le nôtre et les autres scènes)
+concommand.Add("atelier_tuer", function()     -- tout arrêter tout de suite, sans wipe des props
+  if debut then couper(); fin_tournage(false, "arrêté") end
+  if wipe then wipe_force("atelier_tuer") else seq_fin(); effets_fin(); ps_tout_retirer(); sons_tout_couper(); autres_scenes_arreter() end
+  print("[Atelier] tout est arrêté : séquence, effets, nuit, sons et ancienne vitrine (props gardés)")
+end)
+concommand.Add("atelier_diag", function()
+  local n = 0
+  for p in pairs(ATELIER_PS or {}) do if p:IsValid() then n = n + 1 end end
+  local sons = 0
+  for _, x in ipairs(SONS) do if x.joue then sons = sons + 1 end end
+  print(("[Atelier] diag : séquence %s, film %s, wipe %s, build %s"):format(tostring(seq), debut and "en cours" or "non",
+    wipe and "en cours" or "non", origine and "trouvé" or "non trouvé"))
+  print(("[Atelier] diag : %d particules du script, %d traînées, %d sons en cours"):format(n, #TRAINE, sons))
+  local b = autre_scene()
+  print("[Atelier] diag : touches + et - : " .. (b and ("liées à « " .. b .. " » (une autre scène tourne avec : unbind KP_PLUS ; unbind KP_MINUS)") or "libres (le script les lit seul)"))
+  for ev, l in pairs(hook.GetTable()) do
+    if ev == "SetupWorldFog" or ev == "SetupSkyboxFog" or ev == "RenderScreenspaceEffects" or ev == "PostDrawTranslucentRenderables"
+       or ev == "PostDrawSkyBox" or ev == "Think" or ev == "CalcView" then
+      for nom in pairs(l) do
+        nom = tostring(nom)
+        if string.find(nom, "azeno", 1, true) or (string.find(nom, "atelier", 1, true) == nil and (ev == "SetupWorldFog" or ev == "RenderScreenspaceEffects")) then
+          print(("[Atelier] diag : autre hook actif %s / %s"):format(ev, nom))
+        end
+      end
+    end
+  end
+end)
 local appuye = {}
 local function touche(k, f)
   local bas = input.IsKeyDown(k)
@@ -1021,7 +1322,8 @@ local function touche(k, f)
   appuye[k] = bas
 end
 hook.Add("Think", "atelier_seq", function()
-  wipe_tic()
+  local ok, err = pcall(wipe_tic)
+  if not ok then wipe_force(err) end
   if input and not (vgui.GetKeyboardFocus() or gui.IsGameUIVisible() or gui.IsConsoleVisible()
                     or (IsValid(LocalPlayer()) and LocalPlayer():IsTyping())) then
     touche(KEY_PAD_PLUS, function() seq_aller(seq == nil and 1 or seq + 1) end)
@@ -1061,12 +1363,12 @@ local function voile()
   if al > 0 then surface.SetDrawColor(r, g, b, al * 255); surface.DrawRect(0, 0, ScrW(), ScrH()) end
 end
 hook.Add("DrawOverlay", "atelier_film", function()
-  if not (debut or seq ~= nil) or REC then return end
+  if not (debut or seq ~= nil) or REC or not ici() then return end
   local r, g, b, al = ecran(film_t)
   if al > 0 then surface.SetDrawColor(r, g, b, al * 255); surface.DrawRect(0, 0, ScrW(), ScrH()) end
 end)
 hook.Add("RenderScreenspaceEffects", "atelier_film", function()
-  if not (debut or seq ~= nil) then return end
+  if not (debut or seq ~= nil) or not ici() then return end
   local c
   for _, e in ipairs(ECRAN) do if e.type == "etalonnage" and e.t <= film_t and e.t < LIMITE then c = e end end
   if c then
@@ -1078,4 +1380,4 @@ hook.Add("RenderScreenspaceEffects", "atelier_film", function()
 end)
 hook.Add("HUDShouldDraw", "atelier_film", function() if debut then return false end end)
 hook.Add("PreDrawViewModel", "atelier_film", function() if debut then return true end end)
-print("[Atelier] film de « Segunda d'Azeno v16 » chargé : atelier_film_origine, puis atelier_film_jouer, ou + et - du pavé numérique")
+print("[Atelier] film de « Segunda d'Azeno v25 » chargé : atelier_film_origine, puis atelier_film_jouer, ou + et - du pavé numérique")
