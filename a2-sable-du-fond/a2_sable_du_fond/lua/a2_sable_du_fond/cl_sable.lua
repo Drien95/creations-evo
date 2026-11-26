@@ -250,8 +250,8 @@ local function dessiner()
 	if not IsValid(tete) then return end
 	local M = materiaux(etat.choix)
 	if not M then return end
-	local nouvelle = tostring(tete:GetPos()) .. tostring(tete:GetAngles())
-	if nouvelle ~= cle or not meshes then cle = nouvelle; construire() end
+	if not A2_SABLE.cameraPres(tete) then return end   -- loin de la scène : rien à dessiner
+	if tete ~= cle or not meshes then cle = tete; construire() end   -- repère du serveur : nouvel objet s'il bouge
 	hook.Run("a2_brouillard_maillages")
 	for _, c in ipairs(meshes) do
 		render.SetMaterial(M.base); c.base:Draw()
@@ -279,11 +279,12 @@ local function cameraDansBoite()
 	local p = tete:WorldToLocal(EyePos()) + TETE
 	return math.abs(p.x) <= BOITE.BX and math.abs(p.y) <= BOITE.BX and p.z >= BOITE.BZ0 and p.z <= BOITE.BZ1
 end
+local FILTRE_NUIT = { ["$pp_colour_addr"] = 0, ["$pp_colour_addg"] = 0, ["$pp_colour_addb"] = 0.015,   -- table réutilisée
+	["$pp_colour_brightness"] = -0.05, ["$pp_colour_contrast"] = 0.6, ["$pp_colour_colour"] = 0.4,
+	["$pp_colour_mulr"] = 0, ["$pp_colour_mulg"] = 0, ["$pp_colour_mulb"] = 0 }
 A2_SABLE.hook("RenderScreenspaceEffects", "a2_sable_nuit", function()
 	if not etat.nuit or not cameraDansBoite() then return end
-	DrawColorModify({ ["$pp_colour_addr"] = 0, ["$pp_colour_addg"] = 0, ["$pp_colour_addb"] = 0.015,
-		["$pp_colour_brightness"] = -0.05, ["$pp_colour_contrast"] = 0.6, ["$pp_colour_colour"] = 0.4,
-		["$pp_colour_mulr"] = 0, ["$pp_colour_mulg"] = 0, ["$pp_colour_mulb"] = 0 })
+	DrawColorModify(FILTRE_NUIT)
 end)
 
 concommand.Add("a2_sable", function(_, _, args)

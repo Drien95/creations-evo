@@ -115,6 +115,7 @@ function C.modeAncre() return mode end
 function C.repereServeur() return repere end
 
 C.hook("OnEntityCreated", "a2_sable_ancre", function(e)   -- collage en cours : on recherche bientôt (secours)
+  C.nbCrees = C.nbCrees + 1                      -- la fermeture rafraîchit sa liste de props de la boîte
   if IsValid(e) and not repere and not IsValid(cache) then prochain = math.min(prochain, CurTime() + 0.5) end
 end)
 

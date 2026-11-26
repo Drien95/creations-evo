@@ -60,6 +60,11 @@ local tete, prochaineRecherche = nil, 0
 local temps = { n = 0, total = 0, pic = 0 }
 local MAT_BRUME = { Material("particle/smokesprites_0001"), Material("particle/smokesprites_0002"),
 	Material("particle/smokesprites_0003"), Material("particle/smokesprites_0004") }
+local COUL_TMP = Color(0, 0, 0, 0)               -- une seule couleur réutilisée par les dessins de chaque image
+local function coulTmp(r, g, b, a)               -- mêmes bornes que Color() : plafonnée à 255
+	COUL_TMP.r, COUL_TMP.g, COUL_TMP.b, COUL_TMP.a = math.min(r, 255), math.min(g, 255), math.min(b, 255), math.min(a or 255, 255)
+	return COUL_TMP
+end
 local MAT_FLAQUE = Material("sprites/light_glow02_add")
 
 -- ---------- repère ----------
@@ -229,7 +234,7 @@ A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_ferm_brume", function(prof, 
 		end
 		local z = solCreux(r) + b.h + 4 * math.sin(t * 0.13 + b.ph)
 		render.SetMaterial(MAT_BRUME[b.mat])
-		render.DrawSprite(versMonde(math.cos(a) * r, math.sin(a) * r, z), b.taille, b.taille * 0.45, Color(F.BRUME_COUL[1], F.BRUME_COUL[2], F.BRUME_COUL[3], b.alpha))
+		render.DrawSprite(versMonde(math.cos(a) * r, math.sin(a) * r, z), b.taille, b.taille * 0.45, coulTmp(F.BRUME_COUL[1], F.BRUME_COUL[2], F.BRUME_COUL[3], b.alpha))
 	end
 	-- flaque de lumière peinte sur le sable de la dalle (le sable en script n'est pas éclairé par DynamicLight)
 	render.SetMaterial(MAT_FLAQUE)
@@ -239,17 +244,17 @@ A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_ferm_brume", function(prof, 
 	local li = F.LISERE
 	for i = 1, li.N do
 		local a = i / li.N * math.pi * 2
-		render.DrawSprite(versMonde(math.cos(a) * li.R, math.sin(a) * li.R, li.Z), li.TAILLE, li.TAILLE * 0.6, Color(li.COUL[1], li.COUL[2], li.COUL[3], 255))
+		render.DrawSprite(versMonde(math.cos(a) * li.R, math.sin(a) * li.R, li.Z), li.TAILLE, li.TAILLE * 0.6, coulTmp(li.COUL[1], li.COUL[2], li.COUL[3], 255))
 	end
 	local dc = F.DALLE_COUL
-	render.DrawQuadEasy(versMonde(0, 0, F.DALLE_Z), tete:GetUp(), F.DALLE_LUM, F.DALLE_LUM, Color(dc[1], dc[2], dc[3], 255), 0)
+	render.DrawQuadEasy(versMonde(0, 0, F.DALLE_Z), tete:GetUp(), F.DALLE_LUM, F.DALLE_LUM, coulTmp(dc[1], dc[2], dc[3], 255), 0)
 	-- faisceau : sprites additifs empilés de la dalle vers la lumière, plus étroits en haut
 	local fa = F.FAISCEAU
 	for i = 0, fa.N - 1 do
 		local t = i / (fa.N - 1)
 		local tail = fa.TAILLE * (1.25 - 0.6 * t)
 		local k = 1 - 0.7 * t
-		render.DrawSprite(versMonde(0, 0, fa.H0 + (fa.H1 - fa.H0) * t), tail, tail * 1.6, Color(fa.COUL[1] * k, fa.COUL[2] * k, fa.COUL[3] * k, 255))
+		render.DrawSprite(versMonde(0, 0, fa.H0 + (fa.H1 - fa.H0) * t), tail, tail * 1.6, coulTmp(fa.COUL[1] * k, fa.COUL[2] * k, fa.COUL[3] * k, 255))
 	end
 	mesurer(t0)
 end)
@@ -296,17 +301,29 @@ local function dessinNuit(self)
 	if k then render.SetColorModulation(1, 1, 1) end
 	render.SuppressEngineLighting(false)
 end
-local nuits, prochaineNuit = {}, 0
+local nuits, prochaineNuit, vuNuit = {}, 0, { tete = nil, crees = -1 }
+local function coinsBoite()                    -- boîte de la scène alignée sur les axes du monde (pour ents.FindInBox)
+	local mn, mx = Vector(math.huge, math.huge, math.huge), Vector(-math.huge, -math.huge, -math.huge)
+	for _, x in ipairs({ -F.BX, F.BX }) do for _, y in ipairs({ -F.BX, F.BX }) do for _, z in ipairs({ F.BZ0, F.BZ1 }) do
+		local p = versMonde(x, y, z)
+		mn.x, mn.y, mn.z = math.min(mn.x, p.x), math.min(mn.y, p.y), math.min(mn.z, p.z)
+		mx.x, mx.y, mx.z = math.max(mx.x, p.x), math.max(mx.y, p.y), math.max(mx.z, p.z)
+	end end end
+	return mn, mx
+end
 A2_SABLE.hook("Think", "a2_ferm_nuit", function()
 	if CurTime() < prochaineNuit then return end
 	prochaineNuit = CurTime() + 1
-	if not etat.allume or not majTete() then
-		for e in pairs(nuits) do if IsValid(e) then e.RenderOverride = nil end nuits[e] = nil end
+	if not dedans() then                       -- hors de la boîte : aucun parcours d'entités
+		if next(nuits) then for e in pairs(nuits) do if IsValid(e) then e.RenderOverride = nil end nuits[e] = nil end end
+		vuNuit.tete = nil
 		return
 	end
+	if vuNuit.tete == tete and vuNuit.crees == A2_SABLE.nbCrees then return end   -- rien de neuf : liste gardée
+	vuNuit.tete, vuNuit.crees = tete, A2_SABLE.nbCrees
 	for e in pairs(nuits) do if not IsValid(e) then nuits[e] = nil end end
-	for _, e in ipairs(ents.FindByClass("prop_physics")) do
-		if IsValid(e) and not nuits[e] and not e.a2_cache then   -- a2_cache : disques du socle cachés par a2_sequence
+	for _, e in ipairs(ents.FindInBox(coinsBoite())) do   -- seulement la boîte, pas la map entière
+		if IsValid(e) and e:GetClass() == "prop_physics" and not nuits[e] and not e.a2_cache then   -- a2_cache : disques du socle cachés par a2_sequence
 			local p = versBuild(e:GetPos())
 			if math.abs(p.x) <= F.BX and math.abs(p.y) <= F.BX and p.z >= F.BZ0 and p.z <= F.BZ1 then
 				e.RenderOverride = dessinNuit; nuits[e] = true

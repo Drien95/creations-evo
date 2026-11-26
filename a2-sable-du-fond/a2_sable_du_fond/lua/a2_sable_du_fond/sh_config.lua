@@ -47,9 +47,10 @@ function C.carteOk()
 end
 
 -- point (monde) dans la boîte de la scène posée autour de ce prop de tête ?
-function C.dansBoite(tete, pos)
+function C.dansBoite(tete, pos, marge)
+  local m = marge or 0
   local p = tete:WorldToLocal(pos) + C.TETE
-  return math.abs(p.x) <= C.BX and math.abs(p.y) <= C.BX and p.z >= C.BZ0 and p.z <= C.BZ1
+  return math.abs(p.x) <= C.BX + m and math.abs(p.y) <= C.BX + m and p.z >= C.BZ0 - m and p.z <= C.BZ1 + m
 end
 
 if SERVER then return end
@@ -58,6 +59,17 @@ if SERVER then return end
 -- hooks A2 sont retirés et tout est vidé (modèles, maillages, éclairage de nuit, état). Ils reviennent quand le
 -- serveur renvoie une ancre (build recollé : C.rallumer, appelé par sh_ancre.lua).
 local crochets, nettoyages = {}, {}
+C.MARGE_DECOR = 1200                             -- sable et dunes dessinés jusqu'à 1 200 u hors de la boîte (pas d'apparition visible)
+C.nbCrees = 0                                    -- entités créées (sh_ancre.lua) : listes de props à rafraîchir
+local presImg, presTete, presRes = -1, nil, false
+function C.cameraPres(t)                         -- caméra dans la boîte élargie du décor ? une fois par image et par repère
+  local img = FrameNumber()
+  if img ~= presImg or t ~= presTete then
+    presImg, presTete = img, t
+    presRes = t ~= nil and C.dansBoite(t, EyePos(), C.MARGE_DECOR)
+  end
+  return presRes
+end
 C.eteint = false
 function C.hook(ev, nom, fn)
   crochets[#crochets + 1] = { ev, nom, fn }

@@ -37,6 +37,7 @@ end
 -- angle partent dans l'état ; les clients bâtissent la boîte dessus sans chercher eux-mêmes.
 local mjs = setmetatable({}, { __mode = "k" })   -- qui a mené la scène : prévenu en console quand l'ancre change
 local ancre, prochainReleve, vue, trouvee, marques = NULL, 0, { pos = nil, ang = nil }, false, -1
+local forcer = true                              -- recherche complète au prochain relevé (sinon : revalider l'ancre)
 local function annoncer(texte)
   print(texte)
   for ply in pairs(mjs) do if IsValid(ply) then ply:PrintMessage(HUD_PRINTCONSOLE, texte) end end
@@ -47,9 +48,14 @@ local function releverAncre()
   local perdue = trouvee and not C.reel(ancre)    -- l'ancre vient d'être retirée : on cherche tout de suite
   if CurTime() < prochainReleve and not perdue then return ancre end
   prochainReleve = CurTime() + 5
-  local l = C.trouverTetes()
-  local avant = ancre
-  ancre = C.ancreValide(ancre) and ancre or (l[1] or NULL)   -- on garde l'ancre tant qu'elle reste valide
+  local avant, l = ancre, nil
+  if C.reel(ancre) and not forcer and not C.ancreValide(ancre) then ancre = NULL end   -- revalider : quelques sondes autour d'elle
+  if forcer or not C.reel(ancre) then           -- recherche complète : ancre perdue, ou un prop du repère vient d'être créé
+    forcer = false
+    l = C.trouverTetes()
+    ancre = C.ancreValide(ancre) and ancre or (l[1] or NULL)   -- on garde l'ancre tant qu'elle reste valide
+  end
+  l = l or { ancre }
   local n = C.reel(ancre) and C.lireGravure(ancre) or -1
   if C.reel(ancre) ~= trouvee or (C.reel(ancre) and ancre ~= avant) then
     trouvee = C.reel(ancre)
@@ -70,8 +76,16 @@ local function releverAncre()
   marques = n
   return ancre
 end
-local function surCreation()                     -- collage ou PermaProps en cours : relevé bientôt
-  prochainReleve = math.min(prochainReleve, CurTime() + 1)
+local MODELES_REPERE = { [C.MODELE_TETE] = true }   -- modèles qui peuvent faire apparaître un build : tête, gravure, motif
+for _, m in ipairs(C.GRAVURE) do MODELES_REPERE[m.modele] = true end
+for _, m in ipairs(C.MOTIF) do MODELES_REPERE[m.modele] = true end
+local function surCreation(e)                    -- collage ou PermaProps : recherche complète au prochain relevé
+  if not IsValid(e) or e:GetClass() ~= "prop_physics" then return end
+  timer.Simple(0, function()                     -- le modèle n'est pas encore posé à la création
+    if not IsValid(e) or not MODELES_REPERE[string.lower(e:GetModel() or "")] then return end
+    forcer = true
+    prochainReleve = math.min(prochainReleve, CurTime() + 1)   -- anti-rebond : un collage entier = un seul relevé
+  end)
 end
 local function ancreActuelle() local a = releverAncre() return C.reel(a) and a or nil end
 local function dansScene(ply, a) return C.dansBoite(a, ply:EyePos()) end
@@ -131,7 +145,7 @@ function C.reveiller()
   if timer.Exists("a2_sable_relais") then return end
   hook.Add("OnEntityCreated", "a2_sable_ancre", surCreation)
   timer.Create("a2_sable_relais", 0.5, 0, relayer)
-  prochainReleve = 0
+  prochainReleve, forcer = 0, true
 end
 function C.endormir()
   hook.Remove("OnEntityCreated", "a2_sable_ancre")
