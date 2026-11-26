@@ -3951,6 +3951,10 @@ end
 
 -- v5 : dessinée par le lac après le colormod (comme les autres pièces) : le colormod pâlissait couronne et liseré.
 -- Loin derrière la cathédrale, avec le test de profondeur : flèches et lames passent devant.
+EC.MERS = { { -0.28, 0.22, 0.34, 120 }, { 0.12, 0.34, 0.26, 105 }, { 0.22, -0.05, 0.22, 95 },
+  { -0.05, -0.32, 0.2, 90 }, { -0.42, -0.1, 0.16, 110 } }   -- v84 : x, y, rayon (en rayons de lune), opacité
+EC.CRATERES = { { 0.45, 0.42, 0.07 }, { -0.12, -0.58, 0.09 }, { 0.55, -0.35, 0.06 }, { -0.6, 0.35, 0.05 },
+  { 0.3, 0.6, 0.045 }, { -0.35, -0.45, 0.05 }, { 0.05, 0.08, 0.04 }, { 0.68, 0.1, 0.05 } }
 function EC.dessin(TR, T)
   TA = T + (EC.H or 0)
   if not T or EC.coupee then return end
@@ -3966,6 +3970,13 @@ function EC.dessin(TR, T)
   if p < 1 then                                      -- le soleil pâle (caché peu à peu)
     render.SetColorMaterial()
     disque(0, 0, 1, 235, 232, 225, 255)
+    for _, m in ipairs(EC.MERS) do disque(m[1], m[2], m[3], 168, 166, 160, m[4]) end      -- v84 : mers
+    for _, c in ipairs(EC.CRATERES) do                                                   -- v84 : cratères
+      disque(c[1] - 0.012, c[2] + 0.012, c[3], 250, 248, 242, 150)                       -- rebord éclairé
+      disque(c[1], c[2], c[3] * 0.82, 150, 148, 142, 190)                                -- fond dans l'ombre
+    end
+    anneau(0.72, 1.0, 70, 68, 64, 0, 150)                                                -- v84 : bord assombri
+    disque(0.38, -0.3, 1.0, 30, 30, 34, 95)                                              -- v84 : ombre de la sphère
   end
   if p > 0.6 then                                    -- v3 : la couronne, anneaux lumineux et jets autour du disque noir
     local k = lisse((p - 0.6) / 0.4) * (1 + fl)
