@@ -104,6 +104,13 @@ local function sol(r, a)                     -- hauteur exacte du sable (script 
 	return hook.Run("a2_sable_hauteur", r, a or 0) or solCreux(r)
 end
 local function lisse(x) x = math.Clamp(x, 0, 1) return x * x * (3 - 2 * x) end
+-- sommets fixes gardés (rides d'une vague, marques des places) : refaits si le repère bouge ou si le sable est reconstruit
+local cache = { pos = nil, ang = nil, ver = -1, rides = nil, marques = nil }
+local function verifierCache()
+	local p, a, ver = etat.tete:GetPos(), etat.tete:GetAngles(), A2_SABLE.solVersion or 0
+	if cache.pos and cache.ver == ver and cache.ang == a and cache.pos:DistToSqr(p) <= 0.01 then return end
+	cache.pos, cache.ang, cache.ver, cache.rides, cache.marques = p, a, ver, nil, nil
+end
 
 -- ---------- vagues ----------
 local function rayonVague(v, t) return S.R0 + S.V * (t - v.t0) end
@@ -208,8 +215,9 @@ local function dessinerPoussiere(v, t)
 end
 
 -- rides qui se creusent derrière le front : sillon sombre + crête claire, sur le sable
-local function anneau(r, w, dz, col, ph)   -- anneau ondulé : rayon, largeur et opacité varient avec l'angle
+local function anneau(r, w, dz, ph)        -- anneau ondulé : rayon, largeur et opacité varient avec l'angle ; renvoie sommets et opacités
 	local n = S.RIDE_SEG
+	local P, K = {}, {}
 	local function pt(i)
 		local a = i / n * math.pi * 2
 		local dr = 7 * math.sin(3 * a + ph) + 4 * math.sin(7 * a + 2.3 * ph) + 2 * math.sin(13 * a + ph * 0.7)
@@ -219,13 +227,18 @@ local function anneau(r, w, dz, col, ph)   -- anneau ondulé : rayon, largeur et
 	local c0, s0, r0, w0, k0, z0 = pt(0)
 	for i = 1, n do
 		local c1, s1, r1, w1, k1, z1 = pt(i)
-		local a0, a1 = col.a * k0, col.a * k1
-		mesh.Color(col.r, col.g, col.b, a0) mesh.Position(versMonde(c0 * r0, s0 * r0, z0)) mesh.AdvanceVertex()
-		mesh.Color(col.r, col.g, col.b, a0) mesh.Position(versMonde(c0 * (r0 + w0), s0 * (r0 + w0), z0)) mesh.AdvanceVertex()
-		mesh.Color(col.r, col.g, col.b, a1) mesh.Position(versMonde(c1 * (r1 + w1), s1 * (r1 + w1), z1)) mesh.AdvanceVertex()
-		mesh.Color(col.r, col.g, col.b, a1) mesh.Position(versMonde(c1 * r1, s1 * r1, z1)) mesh.AdvanceVertex()
+		local m = #P
+		P[m + 1], K[m + 1] = versMonde(c0 * r0, s0 * r0, z0), k0
+		P[m + 2], K[m + 2] = versMonde(c0 * (r0 + w0), s0 * (r0 + w0), z0), k0
+		P[m + 3], K[m + 3] = versMonde(c1 * (r1 + w1), s1 * (r1 + w1), z1), k1
+		P[m + 4], K[m + 4] = versMonde(c1 * r1, s1 * r1, z1), k1
 		c0, s0, r0, w0, k0, z0 = c1, s1, r1, w1, k1, z1
 	end
+	return P, K
+end
+local function rendreAnneau(P, K, col)     -- mêmes sommets à chaque image, seule l'opacité suit la vague
+	local r, g, b, a = col.r, col.g, col.b, col.a
+	for j = 1, #P do mesh.Color(r, g, b, a * K[j]) mesh.Position(P[j]) mesh.AdvanceVertex() end
 end
 local SILLON, CRETE = Color(20, 18, 17, 0), Color(150, 146, 140, 0)
 local function dessinerRides(t)
@@ -234,6 +247,8 @@ local function dessinerRides(t)
 	local front = math.min(rayonVague(v, t), S.R_FIN)
 	local nb = math.floor((front - S.R0) / S.RIDE_PAS)
 	if nb < 1 then return end
+	if not cache.rides or cache.rides.v ~= v then cache.rides = { v = v } end   -- une vague = un jeu d'anneaux
+	local C = cache.rides
 	render.SetMaterial(MAT_RIDE)
 	render.CullMode(MATERIAL_CULLMODE_NONE)
 	mesh.Begin(MATERIAL_QUADS, nb * S.RIDE_SEG * 2)   -- ≤ 30 anneaux x 64 x 2 = 3 840 quads
@@ -242,8 +257,15 @@ local function dessinerRides(t)
 		local age = (front - r) / S.V           -- secondes depuis le passage du front
 		local k = lisse(age / 1.5) * v.force * (1 - 0.5 * lisse((r - 300) / 300))
 		SILLON.a = 85 * math.min(k, 1.2); CRETE.a = 40 * math.min(k, 1.2)
-		anneau(r, 3, 1.1, SILLON, i * 1.9 + v.n)
-		anneau(r + 3, 2.5, 1.1, CRETE, i * 1.9 + v.n)
+		local A = C[i]
+		if not A then
+			local sP, sK = anneau(r, 3, 1.1, i * 1.9 + v.n)
+			local cP, cK = anneau(r + 3, 2.5, 1.1, i * 1.9 + v.n)
+			A = { sP, sK, cP, cK }
+			C[i] = A
+		end
+		rendreAnneau(A[1], A[2], SILLON)
+		rendreAnneau(A[3], A[4], CRETE)
 	end
 	mesh.End()
 	render.CullMode(MATERIAL_CULLMODE_CCW)
@@ -844,15 +866,17 @@ local function centrePlace(i)               -- entre l'assise et la tablette
 	local r = (S.R_PLACE + S.R_TABLETTE) / 2
 	return math.cos(a) * r, math.sin(a) * r, a
 end
-local function anneauPlat(cx, cy, r0, r1, n, col, a0, a1, dz, ph)   -- anneau posé sur le sable, alpha intérieur a0, extérieur a1
+local function anneauPlat(cx, cy, r0, r1, n, col, a0, a1, dz, ph, garde)   -- anneau posé sur le sable, alpha intérieur a0, extérieur a1 ; garde : liste où ranger les sommets au lieu de les dessiner
 	for k = 0, n - 1 do
 		local u0, u1 = k / n * math.pi * 2, (k + 1) / n * math.pi * 2
 		local o0 = 1 + 0.08 * math.sin(3 * u0 + ph) + 0.05 * math.sin(7 * u0 - ph)
 		local o1 = 1 + 0.08 * math.sin(3 * u1 + ph) + 0.05 * math.sin(7 * u1 - ph)
 		local function p(rr, u, al)
 			local x, y = cx + math.cos(u) * rr, cy + math.sin(u) * rr
+			local pos = versMonde(x, y, sol(math.sqrt(x * x + y * y), math.atan2(y, x)) + dz)
+			if garde then garde[#garde + 1] = { col, al, pos } return end
 			mesh.Color(col[1], col[2], col[3], al)
-			mesh.Position(versMonde(x, y, sol(math.sqrt(x * x + y * y), math.atan2(y, x)) + dz))
+			mesh.Position(pos)
 			mesh.AdvanceVertex()
 		end
 		p(r0 * o0, u0, a0) p(r0 * o1, u1, a0) p(r1 * o1, u1, a1) p(r1 * o0, u0, a1)
@@ -862,16 +886,22 @@ local MARQUE_CLAIR, MARQUE_SOMBRE = { 150, 145, 138 }, { 16, 15, 14 }
 local function dessinerMarques()            -- cercle ratissé clair + sillon sombre autour de l'assise
 	render.SetMaterial(MAT_RIDE)
 	render.CullMode(MATERIAL_CULLMODE_NONE)
-	mesh.Begin(MATERIAL_QUADS, #S.PLACES * 40 * 4)
-	for i, ang in ipairs(S.PLACES) do
-		local a = math.rad(ang)
-		local cx, cy = math.cos(a) * S.R_PLACE, math.sin(a) * S.R_PLACE
-		anneauPlat(cx, cy, S.R_MARQUE - 4, S.R_MARQUE, 40, MARQUE_SOMBRE, 0, 120, 1.0, i)
-		anneauPlat(cx, cy, S.R_MARQUE, S.R_MARQUE + 5, 40, MARQUE_CLAIR, 110, 110, 1.0, i)
-		anneauPlat(cx, cy, S.R_MARQUE + 5, S.R_MARQUE + 14, 40, MARQUE_CLAIR, 55, 0, 1.0, i)
-		local tx, ty = math.cos(a) * S.R_TABLETTE, math.sin(a) * S.R_TABLETTE   -- liseré clair autour de la tablette
-		anneauPlat(tx, ty, 15, 19, 40, MARQUE_CLAIR, 120, 0, 1.0, i + 2)
+	local L = cache.marques
+	if not L then                              -- fixes : calculées une fois par repère et par sol
+		L = {}
+		for i, ang in ipairs(S.PLACES) do
+			local a = math.rad(ang)
+			local cx, cy = math.cos(a) * S.R_PLACE, math.sin(a) * S.R_PLACE
+			anneauPlat(cx, cy, S.R_MARQUE - 4, S.R_MARQUE, 40, MARQUE_SOMBRE, 0, 120, 1.0, i, L)
+			anneauPlat(cx, cy, S.R_MARQUE, S.R_MARQUE + 5, 40, MARQUE_CLAIR, 110, 110, 1.0, i, L)
+			anneauPlat(cx, cy, S.R_MARQUE + 5, S.R_MARQUE + 14, 40, MARQUE_CLAIR, 55, 0, 1.0, i, L)
+			local tx, ty = math.cos(a) * S.R_TABLETTE, math.sin(a) * S.R_TABLETTE   -- liseré clair autour de la tablette
+			anneauPlat(tx, ty, 15, 19, 40, MARQUE_CLAIR, 120, 0, 1.0, i + 2, L)
+		end
+		cache.marques = L
 	end
+	mesh.Begin(MATERIAL_QUADS, #S.PLACES * 40 * 4)
+	for _, s in ipairs(L) do local c = s[1] mesh.Color(c[1], c[2], c[3], s[2]) mesh.Position(s[3]) mesh.AdvanceVertex() end
 	mesh.End()
 	render.CullMode(MATERIAL_CULLMODE_CCW)
 end
@@ -908,6 +938,7 @@ end
 
 A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_seq_effets", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
+	verifierCache()
 	local t = CurTime()
 	dessinerRides(t)
 	for _, v in ipairs(etat.vagues) do dessinerPoussiere(v, t) end
@@ -1080,4 +1111,5 @@ A2_SABLE.surExtinction(function()               -- a2_tout_effacer : modèles cl
 	for _, p in ipairs(places) do p.on, p.res, p.t0 = false, "reussite", 0 end
 	etat.tete, etat.prochain, etat.vagues, etat.n, etat.adler, etat.entendu = nil, 0, {}, 0, NULL, 0
 	recu = nil
+	cache.pos, cache.rides, cache.marques = nil, nil, nil
 end)
