@@ -1042,11 +1042,12 @@ concommand.Add("a2_diag", function()
 	if r then
 		local p, a = r:GetPos(), r:GetAngles()
 		print(string.format("[A2] diag : ancre reçue du serveur : %.0f %.0f %.0f, angle %.0f°, prop %d%s", p.x, p.y, p.z, a.y,
-			C.ancreIndex, C.ancreDesignee and " (désignée par le MJ)" or " (motif)"))
+			C.ancreIndex, C.ancreDesignee and " (désignée par le MJ)" or " (auto)"))
 	else
 		print("[A2] diag : aucune ancre reçue du serveur ; " .. (t and ("secours : " .. C.modeAncre()) or "build introuvable côté client"))
 	end
 	print("[A2] diag : plate5x5 vues par ce client " .. #ents.FindByModel(C.MODELE_TETE))
+	if t then print("[A2] diag : gravure vue par ce client autour de l'ancre " .. C.lireGravure(t) .. "/" .. #C.GRAVURE) end
 	print("[A2] diag : dans la boîte " .. tostring(dedans()))
 	if recu then
 		print(string.format("[A2] diag : dernier état reçu il y a %.0f s : %d vague(s)", CurTime() - recu.t, recu.n))

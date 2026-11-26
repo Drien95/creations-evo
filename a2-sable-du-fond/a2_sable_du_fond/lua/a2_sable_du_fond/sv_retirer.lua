@@ -6,6 +6,7 @@ local C = A2_SABLE
 local MAX_RETIRES = 120                          -- le dupe en a 76
 local MODELES = {
   ["models/hunter/plates/plate16x16.mdl"] = true,
+  ["models/hunter/plates/plate025x025.mdl"] = true,   -- gravure d'usine
   ["models/hunter/plates/plate1x1.mdl"] = true,
   ["models/hunter/plates/plate5x5.mdl"] = true,
   ["models/hunter/plates/plate5x8.mdl"] = true,

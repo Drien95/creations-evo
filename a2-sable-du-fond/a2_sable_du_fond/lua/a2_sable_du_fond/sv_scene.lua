@@ -35,7 +35,7 @@ end
 -- Une seule ancre : celle désignée par a2_ancre, sinon le build reconnu par le motif (sh_ancre.lua). Sa position et son
 -- angle partent dans l'état ; les clients bâtissent la boîte dessus sans chercher eux-mêmes.
 local mjs = setmetatable({}, { __mode = "k" })   -- qui a mené la scène : prévenu dans le chat quand l'ancre change
-local ancre, prochainReleve, vue, trouvee = NULL, 0, { pos = nil, ang = nil }, false
+local ancre, prochainReleve, vue, trouvee, marques = NULL, 0, { pos = nil, ang = nil }, false, -1
 local function annoncer(texte)
   print(texte)
   for ply in pairs(mjs) do if IsValid(ply) then ply:ChatPrint(texte) end end
@@ -48,16 +48,25 @@ local function releverAncre()
   prochainReleve = CurTime() + 5
   local l = C.trouverTetes()
   local avant = ancre
-  ancre = (C.reel(ancre) and C.motifOk(ancre)) and ancre or (l[1] or NULL)   -- on garde l'ancre tant qu'elle reste valide
+  ancre = C.ancreValide(ancre) and ancre or (l[1] or NULL)   -- on garde l'ancre tant qu'elle reste valide
+  local n = C.reel(ancre) and C.lireGravure(ancre) or -1
   if C.reel(ancre) ~= trouvee or (C.reel(ancre) and ancre ~= avant) then
     trouvee = C.reel(ancre)
     if C.reel(ancre) then
-      annoncer(string.format("[A2] build repéré à %s (angle %.0f°)%s", fmt(ancre:GetPos()), ancre:GetAngles().y,
+      annoncer(string.format("[A2] build repéré à %s (angle %.0f°), %s%s", fmt(ancre:GetPos()), ancre:GetAngles().y,
+        n >= C.GRAVURE_MIN and ("gravure " .. n .. "/" .. #C.GRAVURE) or "par le motif (gravure absente)",
         #l > 1 and (" ; " .. #l .. " builds reconnus : a2_ancre en visant celui de la scène") or ""))
     else
       annoncer("[A2] build introuvable : vise-le et tape a2_ancre")
     end
+  elseif C.reel(ancre) and n ~= marques then
+    annoncer(n == #C.GRAVURE and ("[A2] gravure complète (" .. n .. "/" .. n .. ")")
+      or string.format("[A2] gravure incomplète (%d/%d)", math.max(n, 0), #C.GRAVURE))
   end
+  if C.reel(ancre) and n < #C.GRAVURE and avant ~= ancre and n > 0 then
+    annoncer(string.format("[A2] gravure incomplète (%d/%d)", n, #C.GRAVURE))
+  end
+  marques = n
   return ancre
 end
 hook.Add("OnEntityCreated", "a2_sable_ancre", function()   -- collage ou PermaProps en cours : relevé bientôt
@@ -222,7 +231,7 @@ COMMANDES.a2_ancre = function(ply, args)       -- viser un prop du build ; « a2
   local vise = tr.Entity
   if not C.reel(vise) then dire(ply, "[A2] a2_ancre : vise un prop du build (rien de touché)") return end
   local tete
-  if C.motifOk(vise) then tete = vise
+  if C.ancreValide(vise) then tete = vise
   else
     local l = {}
     for _, t in ipairs(C.trouverTetes()) do if C.dansBoite(t, tr.HitPos) then l[#l + 1] = t end end
@@ -233,12 +242,12 @@ COMMANDES.a2_ancre = function(ply, args)       -- viser un prop du build ; « a2
   etat.ancre = tete
   changer(ply)
   annoncer(string.format("[A2] build désigné par %s à %s (angle %.0f°)%s", ply:Nick(), fmt(tete:GetPos()), tete:GetAngles().y,
-    C.motifOk(tete) and "" or " : motif absent, plaque visée"))
+    C.ancreValide(tete) and (", gravure " .. C.lireGravure(tete) .. "/" .. #C.GRAVURE) or " : gravure et motif absents, plaque visée"))
 end
 COMMANDES.a2_etat = function(ply)
   dire(ply, string.format("[A2] vagues : %d ; fil : %s ; ancre : %s ; builds reconnus : %d", etat.n,
-    IsValid(etat.adler) and etat.adler:Nick() or "centre", ancreActuelle() and ((C.reel(etat.ancre) and "désignée, " or "motif, ")
-      .. fmt(ancreActuelle():GetPos())) or "aucune",
+    IsValid(etat.adler) and etat.adler:Nick() or "centre", ancreActuelle() and ((C.reel(etat.ancre) and "désignée, " or "auto, ")
+      .. fmt(ancreActuelle():GetPos()) .. ", gravure " .. C.lireGravure(ancreActuelle()) .. "/" .. #C.GRAVURE) or "aucune",
     #C.trouverTetes()))
   for i, p in ipairs(etat.places) do
     dire(ply, string.format("[A2] place %d : %s, pierres %s, %s", i, IsValid(p.joueur) and p.joueur:Nick() or "libre",

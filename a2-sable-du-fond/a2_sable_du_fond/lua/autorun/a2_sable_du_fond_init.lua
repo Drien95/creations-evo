@@ -5,6 +5,7 @@ include("a2_sable_du_fond/sh_config.lua")
 if not A2_SABLE.carteOk() then return end
 
 local CLIENT_FICHIERS = { "cl_fermeture.lua", "cl_sequence.lua", "cl_dunes.lua", "cl_sable.lua" }   -- ordre du banc
+AddCSLuaFile("a2_sable_du_fond/sh_gravure.lua")
 AddCSLuaFile("a2_sable_du_fond/sh_ancre.lua")
 include("a2_sable_du_fond/sh_ancre.lua")
 if SERVER then

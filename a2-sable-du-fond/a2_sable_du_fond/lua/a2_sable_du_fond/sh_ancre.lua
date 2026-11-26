@@ -5,6 +5,7 @@
 -- par rapport à elle (dans son repère : le build peut être tourné). Plusieurs builds : le plus proche.
 -- Le MJ peut aussi désigner l'ancre à la main (a2_ancre, sv_scene.lua) ; elle passe alors avant la recherche.
 local C = A2_SABLE
+local G = include("a2_sable_du_fond/sh_gravure.lua")   -- gravure d'usine d'abord, motif ci-dessous en secours
 C.MOTIF = {                                      -- positions relatives à la tête (coordonnées du build moins C.TETE)
   { modele = "models/hunter/tubes/circle4x4.mdl", pos = Vector(226, 226, 5.75), requis = true },   -- grand disque
   { modele = "models/hunter/tubes/circle2x2.mdl", pos = Vector(226, 226, 9.25) },                  -- petit disque
@@ -33,12 +34,17 @@ function C.motifOk(t)
   return n >= C.MOTIF_MIN
 end
 
-function C.trouverTetes()                        -- une tête par build posé (bornée par le nombre de plate5x5)
+function C.lireGravure(t) return (G.lire(t, C.GRAVURE)) end   -- nombre de marques trouvées autour de ce repère
+function C.ancreValide(t) return reel(t) and (C.lireGravure(t) >= C.GRAVURE_MIN or C.motifOk(t)) end
+
+function C.trouverTetes()                        -- une tête par build posé : par la gravure, sinon par le motif
   local l = {}
+  for _, r in ipairs(G.chercher(C.MODELE_TETE, C.GRAVURE, C.GRAVURE_MIN)) do l[#l + 1] = r.repere end
+  if #l > 0 then return l, "gravure" end
   for _, e in ipairs(ents.FindByModel(C.MODELE_TETE)) do
     if C.motifOk(e) then l[#l + 1] = e end
   end
-  return l
+  return l, #l > 0 and "motif" or nil
 end
 
 function C.plusProche(liste, pos)
@@ -90,7 +96,7 @@ function C.perdreAncre()                         -- le serveur ne voit plus le b
 end
 
 function C.tete()
-  if repere then mode = C.ancreDesignee and "serveur (désignée par le MJ)" or "serveur (motif)" return repere end
+  if repere then mode = C.ancreDesignee and "serveur (désignée par le MJ)" or "serveur (gravure ou motif)" return repere end
   local now = CurTime()                          -- secours : aucun état reçu encore
   if now >= prochain then
     local l = C.trouverTetes()

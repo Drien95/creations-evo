@@ -14,6 +14,13 @@ C.NET = "a2_sable_etat"                          -- serveur -> clients de la bo�
 C.NET_PRET = "a2_sable_pret"                     -- client -> serveur : « j'ai chargé, envoie-moi l'état »
 -- Repère du dupe : le prop de tête (modèle) et sa place dans le build, reconnu par le motif de sh_ancre.lua. Aucune coordonnée de la map.
 C.MODELE_TETE = "models/hunter/plates/plate5x5.mdl"
+-- Gravure d'usine « A2 v15 » (claude-skills, outils/gravure.py) : 3 marques invisibles posées sur la tête, relatives à elle.
+C.GRAVURE = {
+  { modele = "models/hunter/plates/plate025x025.mdl", pos = Vector(56.1, -37.1, 3.5), lacet = 56.1, couleur = { 158, 94, 236 } },
+  { modele = "models/hunter/plates/plate025x025.mdl", pos = Vector(-41.8, -17.7, 3.5), lacet = 64.7, couleur = { 169, 26, 21 } },
+  { modele = "models/hunter/plates/plate025x025.mdl", pos = Vector(4.1, -79.3, 3.5), lacet = 12.0, couleur = { 147, 41, 17 } },
+}
+C.GRAVURE_MIN = 2                                -- marques à retrouver pour reconnaître le build (sinon : motif en secours)
 C.TETE = Vector(-226, -226, -61.5)
 -- Boîte de la scène, relative au build (centre de la dalle en 0, 0) : mêmes valeurs que les scripts client.
 C.BX, C.BZ0, C.BZ1 = 1800, -200, 700
