@@ -27,12 +27,33 @@ local function motif(p, liste)
   return true
 end
 
--- Repère du build (position de son origine) : l'ancre posée à la main si elle existe encore, sinon le motif le plus
--- proche de ply. Rend aussi le nombre de builds reconnus.
+-- Gravure d'usine (26/11, v88) : 3 marques dédiées noyées dans la dalle du lac, sur la plaque repère, à des écarts, des
+-- angles et des couleurs improbables tirés de « Lac noir de Nobleza v1 » (outils/gravure.py de claude-skills).
+local G = include("lac_noir/sh_gravure.lua")
+local GRAVURE = {
+  { modele = "models/hunter/plates/plate025x025.mdl", pos = Vector(-76.9, -38.7, 2.625), lacet = 37.0, couleur = { 123, 31, 233 } },
+  { modele = "models/hunter/plates/plate025x025.mdl", pos = Vector(44.5, 68.9, 2.625), lacet = 77.2, couleur = { 22, 152, 231 } },
+  { modele = "models/hunter/plates/plate025x025.mdl", pos = Vector(-60.1, -4.2, 2.625), lacet = 64.7, couleur = { 27, 42, 28 } },
+}
+
+local function plus_proche(liste, o)             -- liste d'entités repères : la plus proche de o (ou la première)
+  local pres, meilleur = nil, math.huge
+  for _, e in ipairs(liste) do
+    local d = o and e:GetPos():DistToSqr(o) or 0
+    if d < meilleur then pres, meilleur = e, d end
+  end
+  return pres
+end
+
+-- Repère du build (position de son origine), dans l'ordre : l'ancre posée à la main, la gravure d'usine (dupe v98 et
+-- plus), le motif du trône (dupes plus anciens). Rend aussi le nombre de builds reconnus et la méthode.
 function LAC_NOIR.trouver(ply)
-  if LAC_NOIR.ancre_pos then return LAC_NOIR.ancre_pos, 1 end
-  local pres, meilleur, n = nil, math.huge, 0
+  if LAC_NOIR.ancre_pos then return LAC_NOIR.ancre_pos, 1, "ancre" end
   local o = IsValid(ply) and ply:GetPos() or nil
+  local graves = {}
+  for _, c in ipairs(G.chercher(REF, GRAVURE, #GRAVURE)) do graves[#graves + 1] = c.repere end
+  if #graves > 0 then return plus_proche(graves, o):GetPos() - SOL, #graves, "gravure" end
+  local pres, meilleur, n = nil, math.huge, 0
   local liste = ents.FindByModel(MOITIE)
   for _, e in ipairs(ents.FindByModel(REF)) do
     if IsValid(e) and motif(e:GetPos(), liste) then
@@ -41,7 +62,7 @@ function LAC_NOIR.trouver(ply)
       if d < meilleur then pres, meilleur = e, d end
     end
   end
-  return pres and (pres:GetPos() - SOL) or nil, n
+  return pres and (pres:GetPos() - SOL) or nil, n, "motif"
 end
 
 local function autorise(ply)                     -- joueur invalide = console du serveur
@@ -67,14 +88,14 @@ end
 local function aller(ply, n)
   if not autorise(ply) then return end
   if n < 1 or n > #SEQ then dire(ply, "[Lac noir] séquence " .. n .. " inconnue (1 à " .. #SEQ .. ")") return end
-  local o, nb = LAC_NOIR.trouver(ply)
+  local o, nb, comment = LAC_NOIR.trouver(ply)
   if not o then
     dire(ply, "[Lac noir] build introuvable : scène non lancée. Le dupe est-il collé en entier et sans rotation ? "
       .. "En secours : vise le dossier du trône et tape lac_noir_ancre.")
     return
   end
   if k == 0 or not off or o ~= off then
-    dire(ply, string.format("[Lac noir] build trouvé en (%.0f, %.0f, %.0f)%s", o.x, o.y, o.z,
+    dire(ply, string.format("[Lac noir] build trouvé (%s) en (%.0f, %.0f, %.0f)%s", comment, o.x, o.y, o.z,
       nb > 1 and (" ; " .. nb .. " builds reconnus, le plus proche de toi est pris") or ""))
   end
   off = o
