@@ -94,7 +94,7 @@ local etat = { allume = true }
 local LISERE = { 70, 86, 118 }      -- liseré froid des crêtes (lumière de la dalle)
 local mats = nil
 local tete, prochaineRecherche = nil, 0
-local meshes, cle = nil, nil
+local meshes, clePos, cleAng = nil, nil, nil
 
 local function creer(nom, suffixe, params)
 	local m = CreateMaterial("a2_dunes2_" .. string.gsub(nom, "%W", "_") .. suffixe, "UnlitGeneric", params)
@@ -215,7 +215,8 @@ A2_SABLE.hook("PostDrawOpaqueRenderables", "a2_dunes_lointaines", function(prof,
 	local M = materiaux()
 	if not M then return end
 	if not A2_SABLE.cameraPres(tete) then return end   -- loin de la scène : rien à dessiner
-	if tete ~= cle or not meshes then cle = tete; construire() end   -- repère du serveur : nouvel objet s'il bouge
+	local p, a = tete:GetPos(), tete:GetAngles()   -- clé = position et angle : le passage du prop (secours) au repère du serveur ne reconstruit rien
+	if not meshes or not clePos or clePos:DistToSqr(p) > 0.01 or cleAng ~= a then clePos, cleAng = p, a; construire() end
 	hook.Run("a2_brouillard_maillages")
 	render.SetMaterial(M.base); for _, m in ipairs(meshes.base) do m:Draw() end
 	render.SetMaterial(M.detail); for _, m in ipairs(meshes.detail) do m:Draw() end
@@ -229,5 +230,5 @@ end)
 
 A2_SABLE.surExtinction(function()               -- a2_tout_effacer : maillages détruits, repère oublié
 	for _, l in pairs(meshes or {}) do for _, m in ipairs(l) do m:Destroy() end end
-	meshes, cle, tete, prochaineRecherche = nil, nil, nil, 0
+	meshes, clePos, tete, prochaineRecherche = nil, nil, nil, 0
 end)
