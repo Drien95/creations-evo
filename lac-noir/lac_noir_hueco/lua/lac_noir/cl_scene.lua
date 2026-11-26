@@ -1297,6 +1297,7 @@ local function lac_profond(t)                            -- veines du fond : mag
     for i, a in ipairs(ve) do
       local l = lac_lumiere(a, t); if l > 1 then l = 1 end
       v:SetUnpacked(a[1] + ox, a[2] + oy, z); col.a = 150 * l
+      col.r, col.g, col.b = 150 * l, 12 * l, 16 * l       -- v89 : additif, l'alpha ne compte pas : la couleur porte l'intensité
       render.AddBeam(v, (34 + 10 * a[4]) * (0.6 + 0.4 * l), i * 0.15, col)
     end
     render.EndBeam()
@@ -1512,7 +1513,8 @@ local function lac_veines(t)                             -- le cœur net, qui af
       if dx * dx + dy * dy < dmax2 * 1.5 then
         render.StartBeam(#v)
         for i = 1, #v do
-          col.r, col.g, col.b, col.a = 200, 22, 24, 75 * gk.c[i]
+          local ci = gk.c[i]                                   -- v89 : additif : la couleur porte l'intensité
+          col.r, col.g, col.b, col.a = 200 * ci, 22 * ci, 24 * ci, 75 * ci
           render.AddBeam(gk.wp[i], 9 + 5 * v[i][4], i * 0.2, col)
         end
         render.EndBeam()
@@ -3397,15 +3399,16 @@ function MONO.dessin(TR, T)
     local vu = d < m.rayon or VN:Dot(dir) / d > 0.35 - m.rayon / d   -- v3 : hors champ, rien
     if vu and IsValid(m.e) then
       local I = intensite(m, TR, T)
+      if I <= 0.01 then I = 0 end                                -- v89 : éteint = rien (matériaux additifs : l'alpha 0 dessinait quand même)
       local loin = d > 5200                                      -- v3 : au loin, les fissures seules (coeur)
       if not loin then
         local vap = T >= BOUM and math.max(0, 1 - (T - BOUM) / 6) or 0
         brume(m, T, m.debout and 5 or 2, vap)
       end
-      fissures(m, I, d, loin)
-      if not loin then lave(m, I, T, nb_q) end
+      if I > 0 then fissures(m, I, d, loin) end                  -- v89
+      if not loin and I > 0 then lave(m, I, T, nb_q) end
       if m.debout then
-        if not loin then braises(m, I, T, nb_b) end
+        if not loin and I > 0 then braises(m, I, T, nb_b) end
         eclats(m, T, nb_e)
       end
     end
