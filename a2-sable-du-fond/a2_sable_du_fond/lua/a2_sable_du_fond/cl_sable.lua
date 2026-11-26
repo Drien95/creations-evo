@@ -101,7 +101,7 @@ local function hauteur(r, a)
 	return math.max(z, plaques(r) + MARGE)
 end
 
-hook.Add("a2_sable_hauteur", "a2_sable", function(r, a) return hauteur(r, a) end)   -- coordonnées du build
+A2_SABLE.hook("a2_sable_hauteur", "a2_sable", function(r, a) return hauteur(r, a) end)   -- coordonnées du build
 
 -- ---------- couleur ----------
 local function soleil()
@@ -263,7 +263,7 @@ local function dessiner()
 	temps.n, temps.total, temps.pic = temps.n + 1, temps.total + dt, math.max(temps.pic, dt)
 end
 local enPanne = false                -- une erreur de dessin arrête le script proprement, un seul message
-hook.Add("PostDrawOpaqueRenderables", "a2_sable_surface", function(prof, ciel)
+A2_SABLE.hook("PostDrawOpaqueRenderables", "a2_sable_surface", function(prof, ciel)
 	if prof or ciel or enPanne then return end
 	local ok, err = pcall(dessiner)
 	if not ok then
@@ -279,7 +279,7 @@ local function cameraDansBoite()
 	local p = tete:WorldToLocal(EyePos()) + TETE
 	return math.abs(p.x) <= BOITE.BX and math.abs(p.y) <= BOITE.BX and p.z >= BOITE.BZ0 and p.z <= BOITE.BZ1
 end
-hook.Add("RenderScreenspaceEffects", "a2_sable_nuit", function()
+A2_SABLE.hook("RenderScreenspaceEffects", "a2_sable_nuit", function()
 	if not etat.nuit or not cameraDansBoite() then return end
 	DrawColorModify({ ["$pp_colour_addr"] = 0, ["$pp_colour_addg"] = 0, ["$pp_colour_addb"] = 0.015,
 		["$pp_colour_brightness"] = -0.05, ["$pp_colour_contrast"] = 0.6, ["$pp_colour_colour"] = 0.4,
@@ -321,5 +321,14 @@ concommand.Add("a2_sable_mesure", function()
 	temps.n, temps.total, temps.pic = 0, 0, 0
 end)
 
-hook.Add("a2_sable_reconstruire", "a2_sable", function() cle = nil end)   -- reconstruit au prochain dessin (anciens maillages détruits)
+A2_SABLE.hook("a2_sable_reconstruire", "a2_sable", function() cle = nil end)   -- reconstruit au prochain dessin (anciens maillages détruits)
 print("[a2_sable] chargé v12")   -- trace de chargement (rechargement à chaud vérifiable dans la console)
+
+A2_SABLE.surExtinction(function()               -- a2_tout_effacer : maillages détruits, repère oublié
+	for _, c in ipairs(meshes or {}) do
+		for k, m in pairs(c) do
+			if k == "rides" then for _, p in ipairs(m) do p:Destroy() end else m:Destroy() end
+		end
+	end
+	meshes, cle, tete, prochaineRecherche = nil, nil, nil, 0
+end)

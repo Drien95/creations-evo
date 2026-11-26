@@ -1,22 +1,14 @@
--- A2 « Le Sable du Fond » : a2_retirer, tapée deux fois en 10 s. La scène est remise à zéro pour tous et le serveur
--- retire les props du build dans la boîte de la scène, seulement ceux aux modèles du dupe. La boîte se cale sur le
--- prop de tête du build le plus proche, jamais sur des coordonnées de la map. Avec un prop protect (CPPI) : les props
--- du joueur qui retire, ou n'importe lesquels pour un admin.
+-- A2 « Le Sable du Fond » : a2_tout_effacer (alias a2_retirer), tapée deux fois en 10 s.
+-- Efface TOUT : les props du build repéré (les 79 du dupe, gravure comprise), l'état du serveur, son relais et son hook,
+-- et chez tous les joueurs les effets, modèles, maillages, brouillard, éclairage de nuit et hooks de dessin.
+-- Seuls les props à LEUR place dans le dupe (modèle + position relative à la tête, sv_plan.lua) sont retirés :
+-- jamais ceux d'un autre build, même posé dans la boîte. Avec un prop protect (CPPI) : les props du joueur qui
+-- efface, ou n'importe lesquels pour un admin. Après : l'addon dort ; recoller le build puis taper une commande a2_*
+-- (a2_etat suffit) le réveille.
 local C = A2_SABLE
-local MAX_RETIRES = 120                          -- le dupe en a 76
-local MODELES = {
-  ["models/hunter/plates/plate16x16.mdl"] = true,
-  ["models/hunter/plates/plate025x025.mdl"] = true,   -- gravure d'usine
-  ["models/hunter/plates/plate1x1.mdl"] = true,
-  ["models/hunter/plates/plate5x5.mdl"] = true,
-  ["models/hunter/plates/plate5x8.mdl"] = true,
-  ["models/hunter/triangles/025x025.mdl"] = true,
-  ["models/hunter/tubes/circle2x2.mdl"] = true,
-  ["models/hunter/tubes/circle4x4.mdl"] = true,
-  ["models/hunter/tubes/tube4x4x16c.mdl"] = true,
-  ["models/props_wasteland/rockgranite02a.mdl"] = true,
-  ["models/props_wasteland/rockgranite03b.mdl"] = true,
-}
+local PLAN = include("a2_sable_du_fond/sv_plan.lua")
+local TOL = 4                                    -- écart toléré entre le prop et sa place dans le dupe (u)
+local MARQUE = "models/hunter/plates/plate025x025.mdl"
 local demande = setmetatable({}, { __mode = "k" })  -- confirmation par joueur (10 s) ; la console confirme aussi en 2 fois
 
 local function proprioOk(e, ply)
@@ -24,34 +16,57 @@ local function proprioOk(e, ply)
   return e:CPPIGetOwner() == ply or ply:IsAdmin()
 end
 
-local function retirer(ply, tete)
-  local n = 0
-  local mn = tete:LocalToWorld(Vector(-C.BX, -C.BX, C.BZ0) - C.TETE)
-  local mx = tete:LocalToWorld(Vector(C.BX, C.BX, C.BZ1) - C.TETE)
-  local a, b = Vector(math.min(mn.x, mx.x), math.min(mn.y, mx.y), math.min(mn.z, mx.z)),
-    Vector(math.max(mn.x, mx.x), math.max(mn.y, mx.y), math.max(mn.z, mx.z))
-  for _, e in ipairs(ents.FindInBox(a, b)) do
-    if n >= MAX_RETIRES then break end
-    if IsValid(e) and e:GetClass() == "prop_physics" and MODELES[string.lower(e:GetModel() or "")]
-      and C.dansBoite(tete, e:GetPos()) and proprioOk(e, ply) then
-      e:Remove(); n = n + 1
+-- les props du dupe à leur place autour de cette tête ; borné par la taille du plan
+local function propsDuBuild(tete)
+  local l, pris, tol2 = {}, {}, TOL * TOL
+  for _, p in ipairs(PLAN) do
+    local pos = tete:LocalToWorld(p.pos)
+    for _, e in ipairs(ents.FindInSphere(pos, TOL + 8)) do
+      if not pris[e] and C.reel(e) and e:GetClass() == "prop_physics"
+        and string.lower(e:GetModel() or "") == p.modele and e:GetPos():DistToSqr(pos) <= tol2 then
+        pris[e] = true; l[#l + 1] = e
+        break
+      end
     end
   end
-  return n
+  return l
 end
 
-concommand.Add("a2_retirer", function(ply)
+local function toutEffacer(ply)
+  local tete = C.teteProche()
+  local l = IsValid(tete) and propsDuBuild(tete) or {}
+  local n, marques, gardes = 0, 0, 0
+  for _, e in ipairs(l) do
+    if proprioOk(e, ply) then
+      if string.lower(e:GetModel() or "") == MARQUE then marques = marques + 1 end
+      e:Remove(); n = n + 1
+    else
+      gardes = gardes + 1
+    end
+  end
+  C.endormir()                                   -- état, ancre, relais et hook du serveur
+  net.Start(C.NET_TOUT)                          -- tous les joueurs, dans la boîte ou non
+  net.Broadcast()
+  return IsValid(tete), n, marques, gardes
+end
+
+local function commande(ply)
   if not C.autorise(ply) then return end
   local cle = IsValid(ply) and ply or game.GetWorld()
   local d = demande[cle]
   if not (d and d > CurTime()) then
     demande[cle] = CurTime() + 10
-    C.dire(ply, "[A2] a2_retirer : retape-la dans les 10 s pour confirmer. Le build sera retiré pour tout le monde.")
+    C.dire(ply, "[A2] a2_tout_effacer : retape-la dans les 10 s pour confirmer. Le build et toute la scène seront effacés pour tout le monde.")
     return
   end
   demande[cle] = nil
-  local tete = C.teteProche(ply)
-  if not IsValid(tete) then C.dire(ply, "[A2] build introuvable (prop de tête absent)") return end
-  C.effacer()
-  C.dire(ply, string.format("[A2] scène remise à zéro, %d props du build retirés", retirer(ply, tete)))
-end)
+  local trouve, n, marques, gardes = toutEffacer(ply)
+  if not trouve then
+    C.dire(ply, "[A2] aucun build repéré : aucun prop retiré ; scène éteinte et vidée chez tous")
+    return
+  end
+  C.dire(ply, string.format("[A2] tout effacé : %d/%d props du build retirés (dont %d/%d marques de gravure)%s ; scène éteinte et vidée chez tous. Recoller le build puis taper a2_etat la rallume.",
+    n, #PLAN, marques, #C.GRAVURE, gardes > 0 and (", " .. gardes .. " gardés (prop protect)") or ""))
+end
+concommand.Add("a2_tout_effacer", commande)
+concommand.Add("a2_retirer", commande)           -- ancien nom, même effet

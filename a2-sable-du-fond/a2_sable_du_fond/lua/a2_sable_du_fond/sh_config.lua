@@ -11,6 +11,7 @@ C.AUTORISES = {
 -- L'addon ne charge rien sur une map dont le nom ne contient aucun de ces mots.
 C.CARTES = { "hueco" }
 C.NET = "a2_sable_etat"                          -- serveur -> clients de la boîte : l'état complet de la scène
+C.NET_TOUT = "a2_sable_tout_effacer"             -- serveur -> tous : a2_tout_effacer, tout éteindre et vider
 C.NET_PRET = "a2_sable_pret"                     -- client -> serveur : « j'ai chargé, envoie-moi l'état »
 -- Repère du dupe : le prop de tête (modèle) et sa place dans le build, reconnu par le motif de sh_ancre.lua. Aucune coordonnée de la map.
 C.MODELE_TETE = "models/hunter/plates/plate5x5.mdl"
@@ -50,3 +51,39 @@ function C.dansBoite(tete, pos)
   local p = tete:WorldToLocal(pos) + C.TETE
   return math.abs(p.x) <= C.BX and math.abs(p.y) <= C.BX and p.z >= C.BZ0 and p.z <= C.BZ1
 end
+
+if SERVER then return end
+-- ---------- client : extinction totale (a2_tout_effacer) ----------
+-- Chaque script client pose ses hooks par C.hook et confie son nettoyage à C.surExtinction : à la commande, tous les
+-- hooks A2 sont retirés et tout est vidé (modèles, maillages, éclairage de nuit, état). Ils reviennent quand le
+-- serveur renvoie une ancre (build recollé : C.rallumer, appelé par sh_ancre.lua).
+local crochets, nettoyages = {}, {}
+C.eteint = false
+function C.hook(ev, nom, fn)
+  crochets[#crochets + 1] = { ev, nom, fn }
+  if not C.eteint then hook.Add(ev, nom, fn) end
+end
+function C.surExtinction(fn) nettoyages[#nettoyages + 1] = fn end
+function C.hooksActifs()                         -- hooks A2 encore posés, sur le total enregistré (a2_diag)
+  local t, n = hook.GetTable(), 0
+  for _, c in ipairs(crochets) do if t[c[1]] and t[c[1]][c[2]] then n = n + 1 end end
+  return n, #crochets
+end
+function C.eteindreTout()
+  C.eteint = true
+  for _, c in ipairs(crochets) do hook.Remove(c[1], c[2]) end
+  for _, f in ipairs(nettoyages) do
+    local ok, err = pcall(f)                     -- un nettoyage en erreur n'empêche pas les suivants
+    if not ok then print("[A2] extinction : erreur de nettoyage (" .. tostring(err) .. ")") end
+  end
+end
+function C.rallumer()
+  if not C.eteint then return end
+  C.eteint = false
+  for _, c in ipairs(crochets) do hook.Add(c[1], c[2], c[3]) end
+  print("[A2] build revenu : scène rallumée")
+end
+net.Receive(C.NET_TOUT, function()
+  C.eteindreTout()
+  print(string.format("[A2] tout effacé par le MJ : scène éteinte, %d hook A2 actif", (C.hooksActifs())))
+end)

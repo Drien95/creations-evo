@@ -11,6 +11,7 @@ deuxième vague.
 
 - [Le dupe](dupe.txt) : 79 props (v15 : 76 + 3 marques de gravure). À copier dans `garrysmod/data/advdupe2/`, puis à coller avec Advanced Duplicator 2, figé, sans le tourner.
 - [L'addon serveur](a2_sable_du_fond/) : la scène pour **tous les joueurs** du serveur (sable, nuit, brume, vagues, pierres, fil). Elle se voit et s'entend seulement dans la boîte de la scène.
+- [Toutes les commandes](COMMANDES.md) : nom, arguments, qui peut la taper, effet, exemple.
 - [Le scénario](scenario.md) : le déroulé d'une séance.
 
 ## Poser le dupe
@@ -22,7 +23,7 @@ deuxième vague.
 - **Gravure d'usine** (v15) : 3 petites plaques 0,25 × 0,25 dédiées, posées sur la plaque 5x5 de tête, sous le sable, invisibles, traversables et figées. Leurs écarts et leurs angles sont tirés de l'identifiant « A2 v15 » (jamais un angle rond) et chacune a une couleur improbable. Le serveur reconnaît le build quand il retrouve au moins 2 des 3 marques à leur place par rapport à une plaque 5x5 : aucun build de joueur ne porte ça par hasard, même au milieu de milliers de props.
 - **Motif en secours** : si la gravure manque (ancien dupe v14, marques supprimées), le serveur reconnaît encore le build par un motif de props du dupe : la plaque 5x5, les deux disques de la dalle et le bloc invisible de la place 1, à leur place les uns par rapport aux autres. Ni couleur, ni matériau, ni propriétaire, ni classe ne comptent.
 - Si ni la gravure ni le motif ne sont reconnus, le MJ désigne l'ancre avec `a2_ancre` (voir plus bas).
-- Le serveur l'écrit en console, et dans le chat de qui a mené la scène : « [A2] build repéré à x y z (angle), gravure 3/3 », « [A2] gravure incomplète (2/3) » si une marque manque (le build reste reconnu, il vaut mieux le recoller), « par le motif (gravure absente) », ou « [A2] build introuvable : vise-le et tape a2_ancre ». Sans build repéré, `a2_lancer` et `a2_suivante` refusent et le disent. Si le build est retiré ou déplacé, les joueurs suivent (scène éteinte ou recalée).
+- Le serveur l'écrit en console seulement (aucun message à l'écran, ni chat ni notification) : console du serveur et console de qui a mené la scène : « [A2] build repéré à x y z (angle), gravure 3/3 », « [A2] gravure incomplète (2/3) » si une marque manque (le build reste reconnu, il vaut mieux le recoller), « par le motif (gravure absente) », ou « [A2] build introuvable : vise-le et tape a2_ancre ». Sans build repéré, `a2_lancer` et `a2_suivante` refusent et le disent. Si le build est retiré ou déplacé, les joueurs suivent (scène éteinte ou recalée).
 - Boîte de la scène : 3 600 × 3 600 u autour de la dalle, de 200 u sous elle à 700 u au-dessus. Dehors, rien ne change : ni nuit, ni brume, ni son.
 
 ## Installer l'addon (staff du serveur)
@@ -39,7 +40,8 @@ deuxième vague.
 | `lua/a2_sable_du_fond/sh_gravure.lua` | serveur et clients : lecture de la gravure d'usine (module commun, sans état) |
 | `lua/a2_sable_du_fond/sh_ancre.lua` | serveur et clients : l'ancre, reconnue par la gravure, sinon par le motif de props |
 | `lua/a2_sable_du_fond/sv_scene.lua` | serveur : l'état de la scène, les commandes, l'envoi aux joueurs de la boîte |
-| `lua/a2_sable_du_fond/sv_retirer.lua` | serveur : `a2_retirer`, le retrait du build |
+| `lua/a2_sable_du_fond/sv_retirer.lua` | serveur : `a2_tout_effacer` (et son ancien nom `a2_retirer`), l'effacement total |
+| `lua/a2_sable_du_fond/sv_plan.lua` | serveur : les 79 props du dupe et leur place, pour ne retirer que ce build (généré par [`plan_lua.py`](plan_lua.py) depuis la scène du dupe) |
 | `lua/a2_sable_du_fond/cl_sequence.lua` | clients : vagues, pierres, signatures, socle, fil d'Injerto |
 | `lua/a2_sable_du_fond/cl_fermeture.lua` | clients : nuit, faisceau, brume, ciel, dans la boîte seulement |
 | `lua/a2_sable_du_fond/cl_sable.lua` | clients : la surface de sable et ses rides |
@@ -63,10 +65,11 @@ Une cible est `tous`, un numéro de place (1 à 4) ou un nom de joueur (une part
 | `a2_etat` | rappel de l'état en console : vagues, places, résultats, ancre (gravure n/3), builds reconnus |
 | `a2_ancre` | en visant le build : désigne ce build comme celui de la scène (utile s'il y en a deux). Si ni la gravure ni le motif ne sont reconnus, viser la plaque 5x5 du sol au coin du build ; l'ancre passe alors à tous les joueurs |
 | `a2_ancre auto` | rend la main à la recherche automatique |
-| `a2_effacer` | remet la scène à zéro pour tous (le build reste) |
-| `a2_retirer`, deux fois en 10 s | remet la scène à zéro et retire le build : les props aux modèles du dupe, dans la boîte. Avec un prop protect (CPPI), seulement ceux de qui retire, ou n'importe lesquels pour un admin |
+| `a2_effacer` | remet la **séquence** à zéro pour tous (vagues, pierres, résultats) ; le build et le décor restent |
+| `a2_tout_effacer`, deux fois en 10 s | **efface tout** : les 79 props du build repéré (gravure comprise), seulement ceux à leur place dans le dupe (jamais un autre build) ; l'état, le relais et le hook du serveur ; chez tous les joueurs les effets, modèles, sable, dunes, brume, nuit et hooks de dessin. Avec un prop protect (CPPI) : les props de qui efface, ou tous pour un admin. Ensuite l'addon dort : recoller le build et taper `a2_etat` le rallume |
+| `a2_retirer`, deux fois en 10 s | ancien nom de `a2_tout_effacer`, même effet |
 
-Les réponses des commandes s'écrivent dans la console de qui les tape.
+Les réponses des commandes s'écrivent dans la console de qui les tape, jamais à l'écran (ni chat, ni notification). Détail de chaque commande : [COMMANDES.md](COMMANDES.md).
 
 ## Si rien ne s'affiche (diagnostic, pour chaque joueur)
 
@@ -75,6 +78,7 @@ Les réponses des commandes s'écrivent dans la console de qui les tape.
 | Ligne | Ce qu'elle dit | Si ça ne va pas |
 |---|---|---|
 | addon client chargé, map (acceptée) | le script client est arrivé et la map est bonne | rien ne s'affiche du tout : addon pas installé, ou map refusée (`CARTES`) |
+| scène allumée, hooks A2 actifs n/28 | la scène tourne chez ce joueur | « aucun build, rien d'actif (0/28) » : `a2_tout_effacer` est passé ; recoller le build, le MJ tape `a2_etat` |
 | ancre reçue du serveur | position, angle et prop de l'ancre envoyés par le serveur (auto ou désignée par le MJ), puis « gravure vue par ce client n/3 » | « aucune ancre reçue » : regarder la console serveur (« build repéré » ou « introuvable »), le MJ tape `a2_ancre` en visant le build |
 | dans la boîte | le joueur est bien dans la zone de la scène | |
 | dernier état reçu | ce que le serveur a envoyé (vagues, places) | « aucun état reçu » : le MJ n'a encore rien lancé, ou le serveur ne reconnaît pas le build (`a2_etat` côté MJ) |

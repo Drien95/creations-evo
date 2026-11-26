@@ -5,6 +5,7 @@
 local C = A2_SABLE
 util.AddNetworkString(C.NET)
 util.AddNetworkString(C.NET_PRET)
+util.AddNetworkString(C.NET_TOUT)
 
 local RES_INDEX = {}
 for i, r in ipairs(C.RESULTATS) do RES_INDEX[r] = i end
@@ -34,11 +35,11 @@ end
 -- ---------- l'ancre : le serveur seul décide (il voit toutes les entités) ----------
 -- Une seule ancre : celle désignée par a2_ancre, sinon le build reconnu par le motif (sh_ancre.lua). Sa position et son
 -- angle partent dans l'état ; les clients bâtissent la boîte dessus sans chercher eux-mêmes.
-local mjs = setmetatable({}, { __mode = "k" })   -- qui a mené la scène : prévenu dans le chat quand l'ancre change
+local mjs = setmetatable({}, { __mode = "k" })   -- qui a mené la scène : prévenu en console quand l'ancre change
 local ancre, prochainReleve, vue, trouvee, marques = NULL, 0, { pos = nil, ang = nil }, false, -1
 local function annoncer(texte)
   print(texte)
-  for ply in pairs(mjs) do if IsValid(ply) then ply:ChatPrint(texte) end end
+  for ply in pairs(mjs) do if IsValid(ply) then ply:PrintMessage(HUD_PRINTCONSOLE, texte) end end
 end
 local function fmt(v) return string.format("%.0f %.0f %.0f", v.x, v.y, v.z) end
 local function releverAncre()
@@ -69,9 +70,9 @@ local function releverAncre()
   marques = n
   return ancre
 end
-hook.Add("OnEntityCreated", "a2_sable_ancre", function()   -- collage ou PermaProps en cours : relevé bientôt
+local function surCreation()                     -- collage ou PermaProps en cours : relevé bientôt
   prochainReleve = math.min(prochainReleve, CurTime() + 1)
-end)
+end
 local function ancreActuelle() local a = releverAncre() return C.reel(a) and a or nil end
 local function dansScene(ply, a) return C.dansBoite(a, ply:EyePos()) end
 function C.teteProche() return ancreActuelle() end   -- a2_retirer : la même ancre unique
@@ -124,7 +125,26 @@ local function changer(ply)
   relayer()
   if not ancreActuelle() then dire(ply, "[A2] build introuvable : l'état est gardé, personne ne le voit. Vise le build et tape a2_ancre") end
 end
-timer.Create("a2_sable_relais", 0.5, 0, relayer)
+
+-- ---------- veille : a2_tout_effacer endort l'addon (aucun hook ni timer), une commande a2_* le réveille ----------
+function C.reveiller()
+  if timer.Exists("a2_sable_relais") then return end
+  hook.Add("OnEntityCreated", "a2_sable_ancre", surCreation)
+  timer.Create("a2_sable_relais", 0.5, 0, relayer)
+  prochainReleve = 0
+end
+function C.endormir()
+  hook.Remove("OnEntityCreated", "a2_sable_ancre")
+  timer.Remove("a2_sable_relais")
+  toutEffacer()
+  etat.ancre, ancre, trouvee, marques, vue.pos, vue.ang = NULL, NULL, false, -1, nil, nil
+  for ply in pairs(recu) do recu[ply] = nil end
+  etat.version = etat.version + 1
+end
+function C.actifServeur()                        -- relais et hook A2 du serveur posés ? (a2_etat)
+  return timer.Exists("a2_sable_relais"), (hook.GetTable().OnEntityCreated or {}).a2_sable_ancre ~= nil
+end
+C.reveiller()
 
 -- un client prêt (chargement fini) redemande l'état ; une fois toutes les 5 s au plus
 local demande = setmetatable({}, { __mode = "k" })
@@ -259,6 +279,7 @@ for nom, f in pairs(COMMANDES) do
   concommand.Add(nom, function(ply, _, args)
     if not autorise(ply) then return end
     if IsValid(ply) then mjs[ply] = true end
+    C.reveiller()                                -- après a2_tout_effacer, la première commande rallume l'addon
     f(ply, args or {})
   end)
 end

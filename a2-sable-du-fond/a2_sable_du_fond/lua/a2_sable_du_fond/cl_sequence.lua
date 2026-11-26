@@ -103,7 +103,7 @@ local function lisse(x) x = math.Clamp(x, 0, 1) return x * x * (3 - 2 * x) end
 -- ---------- vagues ----------
 local function rayonVague(v, t) return S.R0 + S.V * (t - v.t0) end
 -- la brume de la fermeture s'écarte devant le front (elle appelle ce hook)
-hook.Add("a2_vague_front", "a2_seq", function()
+A2_SABLE.hook("a2_vague_front", "a2_seq", function()
 	local v = etat.vagues[#etat.vagues]
 	if not v then return end
 	local r = rayonVague(v, CurTime())
@@ -335,7 +335,7 @@ local function dessinerRoc(def, x, y, dessus, yaw)
 end
 hook.Remove("PostDrawOpaqueRenderables", "a2_seq_assises")   -- passe 13 : remplacé par les dalles chanfreinées (a2_seq_dalles)
 
-hook.Add("PostDrawOpaqueRenderables", "a2_seq_pierres", function(prof, ciel)
+A2_SABLE.hook("PostDrawOpaqueRenderables", "a2_seq_pierres", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
 	local m = modele()
 	if not m then return end
@@ -406,7 +406,7 @@ local BOSSE = { PLACE = { 30, 3.5, 9 }, TABLETTE = { 15, 2.5, 6 } }
 local V = { creux = true, talusCoeur = false, coeur = { 116, 113, 118 }, biseauCoeur = 1.0,
 	eclat = 1.35, matiere = true, rTalus = 28, hTalus = 7,
 	jumelles = { { a = 172, r = 108, e = 0.7, yaw = 30, p = 28, rl = 14, dz = -8.6 }, { a = 186, r = 113, e = 0.38, yaw = 150, p = -10, rl = 35, dz = -6.04 } } }
-hook.Add("a2_socle_version", "a2_seq", function() return 8 end)
+A2_SABLE.hook("a2_socle_version", "a2_seq", function() return 8 end)
 local NAPPE = { Z = -51.5, FOND = -57.5, Z_CREUX = -54.2, R = U.R1 + 2, W = 34, W_AMAS = 70, H_AMAS = 2.2, A_AMAS = math.rad(105),   -- 16d : de côté (à 40° l'amas était caché derrière Adler depuis les places)
 	 L_AMAS = math.rad(75) }
 local function lobe(d, r0, h, w) return h * math.exp(-((d - r0) / w) ^ 2) end
@@ -426,7 +426,7 @@ local function nappe(r, a)                  -- surélévation du sable par la na
 	return hc + (h - hc) * lisse((r - U.R2 - 4) / 24)
 end
 local talusAmas                             -- talus des morceaux du socle (assigné plus bas)
-hook.Add("a2_sable_bosse", "a2_seq", function(r, a)
+A2_SABLE.hook("a2_sable_bosse", "a2_seq", function(r, a)
 	local z = nappe(r, a) + (talusAmas and talusAmas(r, a) or 0)
 	if r > 180 and r < 320 then
 		local x, y = math.cos(a) * r, math.sin(a) * r
@@ -530,7 +530,7 @@ local function ecaillures(r, z, n, ph)
 	end
 end
 
-hook.Add("PostDrawTranslucentRenderables", "a2_seq_usure", function(prof, ciel)
+A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_seq_usure", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
 	render.CullMode(MATERIAL_CULLMODE_NONE)
 	render.SetMaterial(MAT_RIDE)
@@ -596,7 +596,7 @@ local function dalle(cx, cy, forme, rb, dessus, base, biseau, yaw)
 	end
 end
 local jumelle
-hook.Add("PostDrawOpaqueRenderables", "a2_seq_dalles", function(prof, ciel)
+A2_SABLE.hook("PostDrawOpaqueRenderables", "a2_seq_dalles", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
 	render.SetMaterial(MAT_SOCLE)
 	render.CullMode(MATERIAL_CULLMODE_NONE)
@@ -657,7 +657,7 @@ local function rienDessiner() end
 local traceCache = ""
 -- passe 15 : SetNoDraw seul ne tenait pas (hypothèse : l'état réseau du serveur le rétablit) ; on réapplique chaque
 -- seconde et on remplace aussi le rendu (RenderOverride vide, marque a2_cache lue par la fermeture). Trace en console.
-hook.Add("Think", "a2_seq_socle_cache", function()
+A2_SABLE.hook("Think", "a2_seq_socle_cache", function()
 	if CurTime() < prochainCache then return end
 	prochainCache = CurTime() + 1
 	local voulu = dedans()
@@ -821,7 +821,7 @@ local quadsSocle = #COEUR * 4
 for _, m in ipairs(AMAS) do quadsSocle = quadsSocle + #m.pts * 4 end
 for _, d in ipairs(DEBRIS) do quadsSocle = quadsSocle + #d.pts * 4 end
 hook.Remove("PostDrawTranslucentRenderables", "a2_seq_socle_sable")   -- passe 15 : failles laissées sombres (sable réel au fond)
-hook.Add("PostDrawOpaqueRenderables", "a2_seq_socle", function(prof, ciel)
+A2_SABLE.hook("PostDrawOpaqueRenderables", "a2_seq_socle", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
 	render.SetMaterial(MAT_SOCLE)
 	render.CullMode(MATERIAL_CULLMODE_NONE)
@@ -901,7 +901,7 @@ local function dessinerSignature(p, i, t)        -- pouls en couleur : halo au s
 	end
 end
 
-hook.Add("PostDrawTranslucentRenderables", "a2_seq_effets", function(prof, ciel)
+A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_seq_effets", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
 	local t = CurTime()
 	dessinerRides(t)
@@ -970,7 +970,7 @@ local function eveilFil(t)                       -- 0 au repos, 1 au plus fort d
 	local k = t - v.t0
 	return lisse(k / FIL.MONTEE) * (1 - lisse((k - FIL.TIENT) / FIL.BAISSE)), k
 end
-hook.Add("PostDrawTranslucentRenderables", "a2_seq_fil", function(prof, ciel)
+A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_seq_fil", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
 	local t = CurTime()
 	local e, k = eveilFil(t)
@@ -1038,6 +1038,9 @@ concommand.Add("a2_diag", function()
 	local C = A2_SABLE
 	local t = C.tete()
 	print("[A2] diag : addon client chargé ; map " .. game.GetMap() .. (C.carteOk() and " (acceptée)" or " (refusée)"))
+	local nh, th = C.hooksActifs()
+	print(C.eteint and string.format("[A2] diag : aucun build, rien d'actif (hooks A2 actifs %d/%d)", nh, th)
+		or string.format("[A2] diag : scène allumée, hooks A2 actifs %d/%d", nh, th))
 	local r = C.repereServeur()
 	if r then
 		local p, a = r:GetPos(), r:GetAngles()
@@ -1054,8 +1057,22 @@ concommand.Add("a2_diag", function()
 		for i, p in ipairs(places) do print(string.format("[A2] diag : place %d, pierres %s, %s", i, p.on and "on" or "off", p.res)) end
 	else print("[A2] diag : aucun état reçu (hors de la boîte, ou aucune commande depuis l'arrivée)") end
 end)
-hook.Add("InitPostEntity", "a2_seq_pret", function()     -- chargement fini : demander l'état en cours
+A2_SABLE.hook("InitPostEntity", "a2_seq_pret", function()     -- chargement fini : demander l'état en cours
 	net.Start(A2_SABLE.NET_PRET) net.SendToServer()
 end)
 
 print("[a2_sequence] chargée (livraison)")
+
+A2_SABLE.surExtinction(function()               -- a2_tout_effacer : modèles client retirés, état et effets vidés
+	if IsValid(pierreModele) then pierreModele:Remove() end
+	if IsValid(jumelle) then jumelle:Remove() end
+	pierreModele, jumelle = nil, nil
+	for k, m in pairs(rocs) do if IsValid(m) then m:Remove() end rocs[k] = nil end
+	for e in pairs(cachesSocle) do
+		if IsValid(e) then e.a2_cache = nil; e.RenderOverride = nil; e:SetNoDraw(false) end
+		cachesSocle[e] = nil
+	end
+	for _, p in ipairs(places) do p.on, p.res, p.t0 = false, "reussite", 0 end
+	etat.tete, etat.prochain, etat.vagues, etat.n, etat.adler, etat.entendu = nil, 0, {}, 0, NULL, 0
+	recu = nil
+end)
