@@ -45,7 +45,7 @@ local etat = { choix = 1, nuit = true, rides = true }   -- v11d : nuit par défa
 local DECALAGES, decal = { 0 }, 0
 local mats = {}
 local tete, prochaineRecherche = nil, 0
-local meshes, cle = nil, nil
+local meshes, clePos, cleAng = nil, nil, nil
 local temps = { n = 0, total = 0, pic = 0 }
 
 -- ---------- matériaux ----------
@@ -251,7 +251,8 @@ local function dessiner()
 	local M = materiaux(etat.choix)
 	if not M then return end
 	if not A2_SABLE.cameraPres(tete) then return end   -- loin de la scène : rien à dessiner
-	if tete ~= cle or not meshes then cle = tete; construire() end   -- repère du serveur : nouvel objet s'il bouge
+	local p, a = tete:GetPos(), tete:GetAngles()   -- clé = position et angle : le passage du prop (secours) au repère du serveur ne reconstruit rien
+	if not meshes or not clePos or clePos:DistToSqr(p) > 0.01 or cleAng ~= a then clePos, cleAng = p, a; construire() end
 	hook.Run("a2_brouillard_maillages")
 	for _, c in ipairs(meshes) do
 		render.SetMaterial(M.base); c.base:Draw()
@@ -308,7 +309,7 @@ concommand.Add("a2_sable_copies", function(_, _, args)
 	local t = {}
 	for _, a in ipairs(args) do local n = tonumber(a) if n then t[#t + 1] = n end end
 	if #t == 0 then t = { 0 } end
-	DECALAGES, meshes, cle = t, nil, nil
+	DECALAGES, meshes, clePos = t, nil, nil
 	print("[a2_sable] copies : " .. table.concat(t, " "))
 end)
 
@@ -322,7 +323,7 @@ concommand.Add("a2_sable_mesure", function()
 	temps.n, temps.total, temps.pic = 0, 0, 0
 end)
 
-A2_SABLE.hook("a2_sable_reconstruire", "a2_sable", function() cle = nil end)   -- reconstruit au prochain dessin (anciens maillages détruits)
+A2_SABLE.hook("a2_sable_reconstruire", "a2_sable", function() clePos = nil end)   -- reconstruit au prochain dessin (anciens maillages détruits)
 print("[a2_sable] chargé v12")   -- trace de chargement (rechargement à chaud vérifiable dans la console)
 
 A2_SABLE.surExtinction(function()               -- a2_tout_effacer : maillages détruits, repère oublié
@@ -331,5 +332,5 @@ A2_SABLE.surExtinction(function()               -- a2_tout_effacer : maillages d
 			if k == "rides" then for _, p in ipairs(m) do p:Destroy() end else m:Destroy() end
 		end
 	end
-	meshes, cle, tete, prochaineRecherche = nil, nil, nil, 0
+	meshes, clePos, tete, prochaineRecherche = nil, nil, nil, 0
 end)
