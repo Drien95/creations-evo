@@ -73,17 +73,7 @@ local MAT_RIDE = CreateMaterial("a2_seq_ride_1", "UnlitGeneric", { ["$basetextur
 	["$vertexcolor"] = 1, ["$vertexalpha"] = 1, ["$translucent"] = 1, ["$decal"] = 1 })
 
 -- ---------- repère ----------
-local function chercherTete()
-	local meilleur, score = nil, math.huge
-	for _, e in ipairs(ents.FindByModel(MODELE_TETE)) do
-		local c = IsValid(e) and e:GetColor()
-		if c and math.abs(c.r - TEINTE_TETE[1]) <= 1 and math.abs(c.g - TEINTE_TETE[2]) <= 1 and math.abs(c.b - TEINTE_TETE[3]) <= 1 then
-			local p = e:GetPos()
-			if p.x + p.y < score then meilleur, score = e, p.x + p.y end
-		end
-	end
-	return meilleur
-end
+local function chercherTete() return A2_SABLE.tete and A2_SABLE.tete() or nil end   -- ancre par motif de props (sh_ancre.lua)
 local function majTete()
 	if CurTime() >= etat.prochain then etat.prochain = CurTime() + 1; etat.tete = chercherTete() end
 	return IsValid(etat.tete)
@@ -1014,6 +1004,7 @@ hook.Add("PostDrawTranslucentRenderables", "a2_seq_fil", function(prof, ciel)
 end)
 
 -- ---------- état reçu du serveur ----------
+local recu = nil                                 -- heure et vagues du dernier état reçu (a2_diag)
 local RESULTATS = A2_SABLE and A2_SABLE.RESULTATS or { "reussite", "crit", "partiel", "echec", "fiasco" }
 net.Receive(A2_SABLE.NET, function()
 	local n = net.ReadUInt(8)
@@ -1028,11 +1019,30 @@ net.Receive(A2_SABLE.NET, function()
 		if places[i] then places[i].on, places[i].res, places[i].t0, places[i].sig = on, res, t0, sig end
 	end
 	etat.adler = net.ReadEntity()
+	A2_SABLE.ancreIndex = net.ReadUInt(16)
+	recu = { t = CurTime(), n = n }
 	etat.n, etat.vagues = n, vagues
 	-- souffle d'Adler : une seule fois par vague, et seulement si elle vient de partir (pas pour qui arrive en retard)
 	local v = vagues[#vagues]
 	if v and v.n ~= etat.entendu and CurTime() - v.t0 < 1.5 and majTete() then jouerSouffle(v.force) end
 	etat.entendu = v and v.n or 0
+	local on = 0
+	for _, p in ipairs(places) do if p.on then on = on + 1 end end
+	print(string.format("[A2] état reçu : %d vague(s), pierres sur %d place(s)", n, on))
+end)
+-- diagnostic (chaque joueur, chez soi) : addon chargé, map, ancre, boîte, dernier état reçu
+concommand.Add("a2_diag", function()
+	local C = A2_SABLE
+	local t = C.tete()
+	print("[A2] diag : addon client chargé ; map " .. game.GetMap() .. (C.carteOk() and " (acceptée)" or " (refusée)"))
+	print("[A2] diag : ancre " .. (t and (t:EntIndex() .. ", " .. C.modeAncre()) or "introuvable") ..
+		" ; plate5x5 vues " .. #ents.FindByModel(C.MODELE_TETE) .. " ; builds reconnus " .. C.nbCandidats ..
+		(C.ancreIndex > 0 and (" ; ancre MJ " .. C.ancreIndex .. (IsValid(Entity(C.ancreIndex)) and "" or " (pas encore reçue par ce client)")) or ""))
+	print("[A2] diag : dans la boîte " .. tostring(dedans()))
+	if recu then
+		print(string.format("[A2] diag : dernier état reçu il y a %.0f s : %d vague(s)", CurTime() - recu.t, recu.n))
+		for i, p in ipairs(places) do print(string.format("[A2] diag : place %d, pierres %s, %s", i, p.on and "on" or "off", p.res)) end
+	else print("[A2] diag : aucun état reçu (hors de la boîte, ou aucune commande depuis l'arrivée)") end
 end)
 hook.Add("InitPostEntity", "a2_seq_pret", function()     -- chargement fini : demander l'état en cours
 	net.Start(A2_SABLE.NET_PRET) net.SendToServer()

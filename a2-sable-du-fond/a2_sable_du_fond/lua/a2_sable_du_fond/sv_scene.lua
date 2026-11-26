@@ -10,7 +10,7 @@ local RES_INDEX = {}
 for i, r in ipairs(C.RESULTATS) do RES_INDEX[r] = i end
 local MAX_VAGUES = 3                             -- les vagues plus anciennes sont finies depuis longtemps
 
-local etat = { n = 0, vagues = {}, places = {}, adler = NULL, version = 0 }
+local etat = { n = 0, vagues = {}, places = {}, adler = NULL, ancre = NULL, version = 0 }
 local function placeVide(i)
   local s = C.SIGS[(i - 1) % #C.SIGS + 1]
   return { on = false, res = "reussite", t0 = 0, joueur = NULL, sig = { s[1], s[2], s[3] } }
@@ -31,30 +31,28 @@ local function dire(ply, texte)
   print(texte)
 end
 
--- ---------- builds posés (repère : prop de tête) ----------
+-- ---------- builds posés (repère : prop de tête, reconnu par le motif de sh_ancre.lua, ou désigné par a2_ancre) ----------
 local tetes, prochainReleve = {}, 0
 local function releverTetes()
+  if C.reel(etat.ancre) then return { etat.ancre } end
   if CurTime() < prochainReleve then return tetes end
-  prochainReleve = CurTime() + 2
-  tetes = {}
-  for _, e in ipairs(ents.FindByModel(C.MODELE_TETE)) do
-    if e:GetClass() == "prop_physics" and C.estTete(e) then tetes[#tetes + 1] = e end
-  end
+  prochainReleve = CurTime() + 5
+  tetes = C.trouverTetes()
   return tetes
 end
+hook.Add("OnEntityCreated", "a2_sable_ancre", function()   -- collage ou PermaProps en cours : relevé bientôt
+  prochainReleve = math.min(prochainReleve, CurTime() + 1)
+end)
 local function dansScene(ply)
   local oeil = ply:EyePos()
   for _, t in ipairs(releverTetes()) do if IsValid(t) and C.dansBoite(t, oeil) then return true end end
   return false
 end
-function C.teteProche(ply)                       -- le build le plus proche de qui tape la commande
-  local o = IsValid(ply) and ply:GetPos() or nil
-  local pres, meilleur = nil, math.huge
-  for _, t in ipairs(releverTetes()) do
-    local d = (IsValid(t) and o) and t:GetPos():DistToSqr(o) or 0
-    if IsValid(t) and d < meilleur then pres, meilleur = t, d end
-  end
-  return pres
+function C.teteProche(ply)                       -- l'ancre désignée, sinon le build le plus proche de qui tape la commande
+  if C.reel(etat.ancre) then return etat.ancre end
+  local l = {}
+  for _, t in ipairs(releverTetes()) do if IsValid(t) then l[#l + 1] = t end end
+  return C.plusProche(l, IsValid(ply) and ply:GetPos() or nil)
 end
 
 -- ---------- relais ----------
@@ -70,6 +68,7 @@ local function envoyer(ply)
     net.WriteUInt(p.sig[1], 8); net.WriteUInt(p.sig[2], 8); net.WriteUInt(p.sig[3], 8)
   end
   net.WriteEntity(IsValid(etat.adler) and etat.adler or NULL)
+  net.WriteUInt(C.reel(etat.ancre) and etat.ancre:EntIndex() or 0, 16)
   net.Send(ply)
   recu[ply] = etat.version
 end
@@ -173,8 +172,34 @@ COMMANDES.a2_adler = function(ply, args)        -- le fil d'Injerto suit ce joue
   changer(ply)
   dire(ply, "[A2] fil d'Injerto : " .. (cible and ("au-dessus de " .. cible:Nick()) or "au centre de la dalle"))
 end
+COMMANDES.a2_ancre = function(ply, args)       -- viser un prop du build ; « a2_ancre auto » rend la main à la recherche
+  if args[1] == "auto" then
+    etat.ancre, prochainReleve = NULL, 0
+    changer(ply)
+    dire(ply, "[A2] ancre : recherche automatique (" .. #releverTetes() .. " build(s) reconnu(s))")
+    return
+  end
+  if not IsValid(ply) then dire(ply, "[A2] a2_ancre se tape en jeu, en visant le build") return end
+  local tr = ply:GetEyeTrace()
+  local vise = tr.Entity
+  if not C.reel(vise) then dire(ply, "[A2] a2_ancre : vise un prop du build (rien de touché)") return end
+  local tete
+  if C.motifOk(vise) then tete = vise
+  else
+    local l = {}
+    for _, t in ipairs(C.trouverTetes()) do if C.dansBoite(t, tr.HitPos) then l[#l + 1] = t end end
+    tete = C.plusProche(l, tr.HitPos)
+    if not tete and string.lower(vise:GetModel() or "") == C.MODELE_TETE then tete = vise end   -- motif absent : la plaque visée
+  end
+  if not tete then dire(ply, "[A2] a2_ancre : build non reconnu ; vise la plaque 5x5 du sol au coin du build (voir README)") return end
+  etat.ancre = tete
+  changer(ply)
+  dire(ply, "[A2] ancre désignée : prop " .. tete:EntIndex() .. (C.motifOk(tete) and " (motif reconnu)" or " (motif absent, plaque visée)"))
+end
 COMMANDES.a2_etat = function(ply)
-  dire(ply, string.format("[A2] vagues : %d ; fil : %s", etat.n, IsValid(etat.adler) and etat.adler:Nick() or "centre"))
+  dire(ply, string.format("[A2] vagues : %d ; fil : %s ; ancre : %s ; builds reconnus : %d", etat.n,
+    IsValid(etat.adler) and etat.adler:Nick() or "centre", C.reel(etat.ancre) and ("désignée " .. etat.ancre:EntIndex()) or "auto",
+    #C.trouverTetes()))
   for i, p in ipairs(etat.places) do
     dire(ply, string.format("[A2] place %d : %s, pierres %s, %s", i, IsValid(p.joueur) and p.joueur:Nick() or "libre",
       p.on and "on" or "off", p.res))
@@ -189,3 +214,4 @@ for nom, f in pairs(COMMANDES) do
 end
 
 C.autorise, C.dire, C.effacer = autorise, dire, function() toutEffacer(); etat.version = etat.version + 1; relayer() end
+C.ancreServeur = function() return etat.ancre end

@@ -16,9 +16,10 @@ deuxième vague.
 ## Poser le dupe
 
 - Sur un sol plat de la zone de build. Le sable, les rides et la cuvette sont dessinés en script autour de la dalle.
-- Figé et sans rotation (seul le collage droit a été testé).
+- Figé. Il peut être tourné (testé au banc tourné de 37°).
 - Pour qu'il reste : PermaProps, par le staff.
-- Le repère de la scène est la grande plaque teintée sous la dalle. Tout se cale dessus, où que le build soit posé : aucune coordonnée de map dans l'addon.
+- **Ancre** : la scène retrouve le build par un motif de props du dupe : une plaque 5x5 du sol, les deux disques de la dalle et le bloc invisible de la place 1, à leur place les uns par rapport aux autres. Ni couleur, ni matériau, ni propriétaire, ni classe ne comptent : les plaques des autres builds ne la trompent pas. Tout se cale dessus, où que le build soit posé : aucune coordonnée de map dans l'addon.
+- Si le motif n'est pas reconnu (props manquants), le MJ désigne l'ancre avec `a2_ancre` (voir plus bas).
 - Boîte de la scène : 3 600 × 3 600 u autour de la dalle, de 200 u sous elle à 700 u au-dessus. Dehors, rien ne change : ni nuit, ni brume, ni son.
 
 ## Installer l'addon (staff du serveur)
@@ -31,6 +32,7 @@ deuxième vague.
 |---|---|
 | `lua/autorun/a2_sable_du_fond_init.lua` | chargeur : vérifie la map, envoie les scripts client, include des bons fichiers de chaque côté |
 | `lua/a2_sable_du_fond/sh_config.lua` | serveur et clients : qui mène la scène, cartes, repère et boîte, messages réseau |
+| `lua/a2_sable_du_fond/sh_ancre.lua` | serveur et clients : l'ancre, reconnue par le motif de props (même règle des deux côtés) |
 | `lua/a2_sable_du_fond/sv_scene.lua` | serveur : l'état de la scène, les commandes, l'envoi aux joueurs de la boîte |
 | `lua/a2_sable_du_fond/sv_retirer.lua` | serveur : `a2_retirer`, le retrait du build |
 | `lua/a2_sable_du_fond/cl_sequence.lua` | clients : vagues, pierres, signatures, socle, fil d'Injerto |
@@ -53,11 +55,26 @@ Une cible est `tous`, un numéro de place (1 à 4) ou un nom de joueur (une part
 | `a2_suivante` | vague suivante, plus forte ; à partir de la 2e, le fil d'Injerto se tend et s'éclaire un instant |
 | `a2_resultat <cible> <crit\|reussite\|partiel\|echec\|fiasco>` | les pierres jouent le résultat |
 | `a2_adler [joueur]` | le fil d'Injerto suit ce joueur (sans nom : au centre de la dalle) |
-| `a2_etat` | rappel de l'état en console : vagues, places, résultats |
+| `a2_etat` | rappel de l'état en console : vagues, places, résultats, ancre, builds reconnus |
+| `a2_ancre` | en visant le build : désigne ce build comme celui de la scène (utile s'il y en a deux). Si le motif n'est pas reconnu, viser la plaque 5x5 du sol au coin du build ; l'ancre passe alors à tous les joueurs |
+| `a2_ancre auto` | rend la main à la recherche automatique |
 | `a2_effacer` | remet la scène à zéro pour tous (le build reste) |
 | `a2_retirer`, deux fois en 10 s | remet la scène à zéro et retire le build : les props aux modèles du dupe, dans la boîte. Avec un prop protect (CPPI), seulement ceux de qui retire, ou n'importe lesquels pour un admin |
 
 Les réponses des commandes s'écrivent dans la console de qui les tape.
+
+## Si rien ne s'affiche (diagnostic, pour chaque joueur)
+
+`a2_diag` dans la console du joueur, dans la zone. Il affiche :
+
+| Ligne | Ce qu'elle dit | Si ça ne va pas |
+|---|---|---|
+| addon client chargé, map (acceptée) | le script client est arrivé et la map est bonne | rien ne s'affiche du tout : addon pas installé, ou map refusée (`CARTES`) |
+| ancre, plate5x5 vues, builds reconnus | le build est retrouvé (motif ou désigné par le MJ) | « introuvable » : props du motif manquants, le MJ tape `a2_ancre` en visant la plaque du coin |
+| dans la boîte | le joueur est bien dans la zone de la scène | |
+| dernier état reçu | ce que le serveur a envoyé (vagues, places) | « aucun état reçu » : le MJ n'a encore rien lancé, ou le serveur ne reconnaît pas le build (`a2_etat` côté MJ) |
+
+Le client écrit aussi en console quand il trouve ou perd l'ancre et à chaque état reçu (`[A2] ...`).
 
 **Résultats** (on peut les rejouer autant de fois qu'on veut, chaque commande relance l'animation) :
 
@@ -78,7 +95,7 @@ signatures) ; il n'entend pas le souffle des vagues déjà passées.
 
 ## Limites connues
 
-- Testé en solo seulement, sur gm_flatgrass (banc de l'Atelier) : pas encore avec plusieurs joueurs, ni sur Hueco.
+- Testé en solo seulement, sur gm_flatgrass (banc de l'Atelier) : pas encore avec plusieurs joueurs, ni sur Hueco. Testé au banc : build tourné de 37°, plaques 5x5 teintes et 8x8 parasites ailleurs, faux motif (plaque + disque seul) refusé.
 - Les droits MJ n'ont été essayés qu'avec un admin (le joueur solo) ; le refus d'un joueur non listé n'a pas été vu en jeu.
 - La place des props dans le sable de Hueco n'a pas été vérifiée sur la map.
 - Le build ne reste qu'avec PermaProps, posé par le staff.

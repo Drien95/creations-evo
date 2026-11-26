@@ -116,20 +116,7 @@ local function materiaux()
 	return mats
 end
 
-local function memeTeinte(e)
-	local c = e:GetColor()
-	return math.abs(c.r - TEINTE_TETE[1]) <= 1 and math.abs(c.g - TEINTE_TETE[2]) <= 1 and math.abs(c.b - TEINTE_TETE[3]) <= 1
-end
-local function chercherTete()
-	local meilleur, score = nil, math.huge
-	for _, e in ipairs(ents.FindByModel(MODELE_TETE)) do
-		if IsValid(e) and memeTeinte(e) then
-			local p = e:GetPos()
-			if p.x + p.y < score then meilleur, score = e, p.x + p.y end
-		end
-	end
-	return meilleur
-end
+local function chercherTete() return A2_SABLE.tete and A2_SABLE.tete() or nil end   -- ancre par motif de props (sh_ancre.lua)
 local function versMonde(x, y, z) return tete:LocalToWorld(Vector(x, y, z) - TETE) end
 local function lisse(a, b, t) t = math.Clamp((t - a) / (b - a), 0, 1) return t * t * (3 - 2 * t) end
 local function soleil()
