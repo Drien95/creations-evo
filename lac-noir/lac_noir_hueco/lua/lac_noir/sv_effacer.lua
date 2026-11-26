@@ -1,8 +1,8 @@
 -- Lac noir de Nobleza : effacer le build (26/11/2026). lac_noir_effacer, tapée deux fois en 10 s : la scène s'arrête pour
--- tous et le serveur retire les props du build dans la boîte de la scène (repère de l'île sur Hueco), seulement ceux aux
--- modèles du dupe. Avec un prop protect (CPPI) : les props du joueur qui efface, ou n'importe lesquels pour un admin.
-local ORIG = Vector(-11240, -12938, 14043)          -- repère de l'île (ancre de collage du dupe)
-local BMIN, BMAX = ORIG + Vector(-4100, -2700, -150), ORIG + Vector(4100, 5700, 1900)   -- boîte de la scène + 50 u
+-- tous et le serveur retire les props du build dans la boîte de la scène, seulement ceux aux modèles du dupe. La boîte se
+-- cale sur le dupe posé (sa grande plaque 8x8, comme le script client), jamais sur des coordonnées de la map. Avec un prop protect (CPPI) : les props du joueur qui efface, ou n'importe lesquels pour un admin.
+local REF, SOL = "models/hunter/plates/plate8x8.mdl", Vector(0, 2600, 1.0)   -- plaque repère du dupe et sa place dans le build
+local BMIN, BMAX = Vector(-4100, -2700, -150), Vector(4100, 5700, 1900)      -- boîte de la scène (+ 50 u), relative au build
 local MAX_RETIRES = 400
 local MODELES = {
   ["models/hunter/blocks/cube05x05x025.mdl"] = true,
@@ -65,9 +65,19 @@ local function proprio_ok(e, ply)
   return e:CPPIGetOwner() == ply or ply:IsAdmin()
 end
 
-local function retirer(ply)
+local function repere(ply)                         -- le build posé : la plaque repère la plus proche de qui efface
+  local pres, meilleur = nil, math.huge
+  local o = IsValid(ply) and ply:GetPos() or nil
+  for _, e in ipairs(ents.FindByModel(REF)) do
+    local d = o and e:GetPos():DistToSqr(o) or 0
+    if d < meilleur then pres, meilleur = e, d end
+  end
+  return pres and (pres:GetPos() - SOL) or nil
+end
+
+local function retirer(ply, off)
   local n = 0
-  for _, e in ipairs(ents.FindInBox(BMIN, BMAX)) do
+  for _, e in ipairs(ents.FindInBox(off + BMIN, off + BMAX)) do
     if n >= MAX_RETIRES then break end
     if IsValid(e) and e:GetClass() == "prop_physics" and MODELES[string.lower(e:GetModel() or "")] and proprio_ok(e, ply) then
       e:Remove(); n = n + 1
@@ -86,6 +96,8 @@ concommand.Add("lac_noir_effacer", function(ply)
     return
   end
   demande[cle] = nil
+  local off = repere(ply)
+  if not off then LAC_NOIR.dire(ply, "[Lac noir] build introuvable (plaque repère absente)") return end
   LAC_NOIR.arreter()
-  LAC_NOIR.dire(ply, string.format("[Lac noir] scène arrêtée, %d props du build retirés", retirer(ply)))
+  LAC_NOIR.dire(ply, string.format("[Lac noir] scène arrêtée, %d props du build retirés", retirer(ply, off)))
 end)
