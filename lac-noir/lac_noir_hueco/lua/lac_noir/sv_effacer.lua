@@ -65,31 +65,8 @@ local function proprio_ok(e, ply)
   return e:CPPIGetOwner() == ply or ply:IsAdmin()
 end
 
--- Le build se reconnaît à son motif (26/11, v86) : la plaque 8x8 ET les deux moitiés du dossier du trône à leur place
--- exacte autour (20 u près). Une plaque 8x8 d'un autre build n'est jamais prise pour la nôtre.
-local MOITIE = "models/hunter/blocks/cube1x2x025.mdl"
-local MOIT = { Vector(-30.521, -2317.987, 327.428), Vector(30.521, -2317.987, 327.428) }
-
-local function motif(p, liste)
-  for _, v in ipairs(MOIT) do
-    local cible, ok = p + v, false
-    for _, e in ipairs(liste) do if IsValid(e) and e:GetPos():DistToSqr(cible) < 400 then ok = true break end end
-    if not ok then return false end
-  end
-  return true
-end
-
-local function repere(ply)                         -- le build posé : la plaque du motif la plus proche de qui efface
-  local pres, meilleur = nil, math.huge
-  local o = IsValid(ply) and ply:GetPos() or nil
-  local liste = ents.FindByModel(MOITIE)
-  for _, e in ipairs(ents.FindByModel(REF)) do
-    if IsValid(e) and motif(e:GetPos(), liste) then
-      local d = o and e:GetPos():DistToSqr(o) or 0
-      if d < meilleur then pres, meilleur = e, d end
-    end
-  end
-  return pres and (pres:GetPos() - SOL) or nil
+local function repere(ply)                         -- le build posé : même recherche que le lancement (motif ou ancre)
+  return (LAC_NOIR.trouver(ply))
 end
 
 local function retirer(ply, off)
@@ -116,5 +93,6 @@ concommand.Add("lac_noir_effacer", function(ply)
   local off = repere(ply)
   if not off then LAC_NOIR.dire(ply, "[Lac noir] build introuvable (motif du Lac noir absent)") return end
   LAC_NOIR.arreter()
+  LAC_NOIR.ancre_pos = nil                         -- build retiré : l'ancre manuelle ne vaut plus
   LAC_NOIR.dire(ply, string.format("[Lac noir] scène arrêtée, %d props du build retirés", retirer(ply, off)))
 end)

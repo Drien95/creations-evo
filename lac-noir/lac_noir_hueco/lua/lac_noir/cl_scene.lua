@@ -527,13 +527,14 @@ function SC.dans_boite(p)                        -- v86 : position dans la boît
 end
 local function reperer()
   local d, m = SC.repere()
-  if not d then                                    -- v86 : motif introuvable ; v85 : build retiré (ou pas encore collé) : plus rien du tout
+  if SC.OS then m = SC.moities(SC.OS + SOL, ents.FindByModel(MOITIE)) end   -- v87 : le serveur fait foi
+  if not d and not SC.OS then                                    -- v86 : motif introuvable ; v85 : build retiré (ou pas encore collé) : plus rien du tout
     off = nil
     if t0 then t0 = nil; SC.couper(); RunConsoleCommand("stopsound") end
     if CATH and CATH.oublier then CATH.oublier() end
     return
   end
-  off = d:GetPos() - SOL
+  off = SC.OS or (d:GetPos() - SOL)
   if CATH then CATH.reperer(off) end
   if m then                                        -- v86 : les deux moitiés du motif
     local a1, b1 = m[1]:WorldSpaceAABB(); local a2, b2 = m[2]:WorldSpaceAABB()
@@ -1942,6 +1943,8 @@ function SC.en_cours() return SC.k ~= nil end
 function SC.t0() return SC.s - SC.SEQ[SC.k][1] end
 net.Receive("lac_noir_seq", function()
   local k, s = net.ReadUInt(8), net.ReadDouble()
+  SC.OS = net.ReadBool() and net.ReadVector() or nil      -- v87 : repère du build trouvé par le serveur
+  if SC.OS then print("[lac_repere] repère reçu du serveur : " .. tostring(SC.OS)) end
   if k == 0 or not SC.SEQ[k] then SC.k, SC.s, SC.fin = nil, nil, nil; if t0 then arreter() end return end   -- arrêt pour tous
   local suivant = t0 ~= nil and SC.k == k - 1     -- v73 : seule la séquence suivante enchaîne ; un retour ou un saut repart propre (sons compris)
   SC.k, SC.s, SC.manuel = k, s, false

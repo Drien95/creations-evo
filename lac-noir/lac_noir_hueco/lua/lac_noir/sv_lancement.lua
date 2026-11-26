@@ -2,11 +2,47 @@
 -- lac_noir_suite : séquence suivante (la première au départ). lac_noir_precedente : séquence précédente.
 -- lac_noir_sequence N : saute à la séquence N.
 -- lac_noir_arreter : coupe la scène pour tous. Réservé à qui est listé dans sh_config.lua (et aux admins), et à la console du serveur.
+-- lac_noir_ancre : en secours, fixe le repère à la main (viser le dossier du trône).
 -- Chaque séquence joue puis tient sa dernière image jusqu'à la suivante. Un joueur qui arrive reprend au bon instant.
+-- Repère (26/11, v87) : c'est le serveur qui trouve le build (il voit toute la map) et envoie sa position aux joueurs avec
+-- la séquence. Sans build trouvé, la scène ne se lance pas et le MJ est prévenu.
 util.AddNetworkString(LAC_NOIR.NET)
 
 local SEQ = LAC_NOIR.SEQ
-local k, depart = 0, 0
+local k, depart, off = 0, 0, nil
+
+-- Le build se reconnaît à son motif : la plaque 8x8 ET les deux moitiés du dossier du trône à leur place exacte autour
+-- (20 u près). Une plaque 8x8 d'un autre build n'est jamais prise pour la nôtre. Le dupe doit être collé sans rotation.
+local REF, SOL = "models/hunter/plates/plate8x8.mdl", Vector(0, 2600, 1.0)   -- plaque repère et sa place dans le build
+local MOITIE = "models/hunter/blocks/cube1x2x025.mdl"
+local MOIT = { Vector(-30.521, -2317.987, 327.428), Vector(30.521, -2317.987, 327.428) }
+LAC_NOIR.SOL = SOL
+
+local function motif(p, liste)
+  for _, v in ipairs(MOIT) do
+    local cible, ok = p + v, false
+    for _, e in ipairs(liste) do if IsValid(e) and e:GetPos():DistToSqr(cible) < 400 then ok = true break end end
+    if not ok then return false end
+  end
+  return true
+end
+
+-- Repère du build (position de son origine) : l'ancre posée à la main si elle existe encore, sinon le motif le plus
+-- proche de ply. Rend aussi le nombre de builds reconnus.
+function LAC_NOIR.trouver(ply)
+  if LAC_NOIR.ancre_pos then return LAC_NOIR.ancre_pos, 1 end
+  local pres, meilleur, n = nil, math.huge, 0
+  local o = IsValid(ply) and ply:GetPos() or nil
+  local liste = ents.FindByModel(MOITIE)
+  for _, e in ipairs(ents.FindByModel(REF)) do
+    if IsValid(e) and motif(e:GetPos(), liste) then
+      n = n + 1
+      local d = o and e:GetPos():DistToSqr(o) or 0
+      if d < meilleur then pres, meilleur = e, d end
+    end
+  end
+  return pres and (pres:GetPos() - SOL) or nil, n
+end
 
 local function autorise(ply)                     -- joueur invalide = console du serveur
   if not IsValid(ply) then return true end
@@ -23,12 +59,25 @@ local function envoyer(cible)
   net.Start(LAC_NOIR.NET)
   net.WriteUInt(k, 8)
   net.WriteDouble(depart)
+  net.WriteBool(k > 0 and off ~= nil)
+  if k > 0 and off then net.WriteVector(off) end
   if cible then net.Send(cible) else net.Broadcast() end
 end
 
 local function aller(ply, n)
   if not autorise(ply) then return end
   if n < 1 or n > #SEQ then dire(ply, "[Lac noir] séquence " .. n .. " inconnue (1 à " .. #SEQ .. ")") return end
+  local o, nb = LAC_NOIR.trouver(ply)
+  if not o then
+    dire(ply, "[Lac noir] build introuvable : scène non lancée. Le dupe est-il collé en entier et sans rotation ? "
+      .. "En secours : vise le dossier du trône et tape lac_noir_ancre.")
+    return
+  end
+  if k == 0 or not off or o ~= off then
+    dire(ply, string.format("[Lac noir] build trouvé en (%.0f, %.0f, %.0f)%s", o.x, o.y, o.z,
+      nb > 1 and (" ; " .. nb .. " builds reconnus, le plus proche de toi est pris") or ""))
+  end
+  off = o
   k, depart = n, CurTime()
   envoyer()
   dire(ply, string.format("[Lac noir] séquence %d/%d : %s%s", k, #SEQ, SEQ[k],
@@ -49,7 +98,29 @@ concommand.Add("lac_noir_sequence", function(ply, _, args)
   aller(ply, math.floor(tonumber(args[1] or "") or 0))
 end)
 
-function LAC_NOIR.arreter() k, depart = 0, 0; envoyer() end
+concommand.Add("lac_noir_ancre", function(ply)  -- secours : le dossier du trône visé fixe le repère
+  if not autorise(ply) or not IsValid(ply) then return end
+  local e = ply:GetEyeTrace().Entity
+  local m = IsValid(e) and string.lower(e:GetModel() or "") or ""
+  local o
+  if m == REF then
+    o = e:GetPos() - SOL
+  elseif m == MOITIE then                          -- une des deux moitiés : celle dont la sœur est à sa place
+    local liste = ents.FindByModel(MOITIE)
+    for _, v in ipairs(MOIT) do
+      local essai = e:GetPos() - v                 -- position de la plaque si e est cette moitié-là
+      if motif(essai, liste) then o = essai - SOL break end
+    end
+  end
+  if not o then
+    dire(ply, "[Lac noir] vise le dossier du trône (une des deux moitiés noires), puis retape lac_noir_ancre")
+    return
+  end
+  LAC_NOIR.ancre_pos = o
+  dire(ply, string.format("[Lac noir] ancre posée : build en (%.0f, %.0f, %.0f)", o.x, o.y, o.z))
+end)
+
+function LAC_NOIR.arreter() k, depart, off = 0, 0, nil; envoyer() end
 LAC_NOIR.autorise, LAC_NOIR.dire = autorise, dire        -- pour sv_effacer.lua
 
 concommand.Add("lac_noir_arreter", function(ply)
@@ -58,7 +129,7 @@ concommand.Add("lac_noir_arreter", function(ply)
   dire(ply, "[Lac noir] scène arrêtée pour tous")
 end)
 
--- Arrivée en cours de scène : on envoie la séquence en cours après le chargement du joueur.
+-- Arrivée en cours de scène : on envoie la séquence en cours (et le repère) après le chargement du joueur.
 hook.Add("PlayerInitialSpawn", "lac_noir_lancement", function(ply)
   if k == 0 then return end
   timer.Simple(5, function() if IsValid(ply) and k > 0 then envoyer(ply) end end)

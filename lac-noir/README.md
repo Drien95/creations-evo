@@ -22,6 +22,9 @@ Aucun prop ne traverse le sable (vérifié sur la géométrie de la map).
 
 Collez le dupe **sans le tourner** : le script reconnaît le build à son motif (la grande plaque 8x8 et les deux moitiés
 du dossier du trône à leur place exacte). Les plaques 8x8 des autres builds de la map sont ignorées.
+C'est le serveur qui cherche le build (il voit toute la map) et envoie sa position aux joueurs. Au lancement, celui
+qui mène la scène lit dans le chat « build trouvé en (x, y, z) ». Si le build n'est pas trouvé, la scène ne se lance pas
+et le chat le dit : utiliser alors `lac_noir_ancre`.
 
 ## Installer l'addon (staff du serveur)
 
@@ -48,6 +51,7 @@ du dossier du trône à leur place exacte). Les plaques 8x8 des autres builds de
 | `lac_noir_precedente` | séquence précédente (elle repart de son début) |
 | `lac_noir_sequence N` | aller à la séquence N (1 à 9) |
 | `lac_noir_arreter` | tout arrêter pour tout le monde |
+| `lac_noir_ancre` | en secours, si le build n'est pas trouvé : viser le dossier du trône (une des deux moitiés noires) et taper la commande |
 | `lac_noir_effacer`, deux fois en 10 s | arrête la scène et retire le build : les props aux modèles du dupe, dans la boîte de la scène. Avec un prop protect (CPPI), seulement ceux de qui efface, ou n'importe lesquels pour un admin |
 | `lac_eau_stop` | (chaque joueur) couper la scène chez soi seulement |
 
@@ -64,7 +68,8 @@ Dans la console du joueur (touche `²`), cherchez les lignes qui commencent par 
 | Ligne | Ce qu'elle dit |
 |---|---|
 | `[lac_cloche]` | le script client est bien chargé |
-| `[lac_repere] ... build du Lac noir trouvé` | le dupe est reconnu |
+| `[lac_repere] repère reçu du serveur` | le serveur a trouvé le build et l'a envoyé |
+| `[lac_repere] ... build du Lac noir trouvé` | le joueur reconnaît aussi le dupe autour de lui |
 | `[lac_repere] ... motif du build introuvable` | dupe absent, incomplet, ou collé tourné |
 | `[lac_eau_demo] séquence N` | la séquence est bien reçue |
 | `[lac_boite] joueur dans de la boîte` | le joueur est dans la zone de la scène |
