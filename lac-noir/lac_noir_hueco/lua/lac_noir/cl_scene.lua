@@ -57,6 +57,8 @@ end
 function Q.bande(pa, na, wa, pb, nb, wb) return { pa - na * wa, pa + na * wa, pb + nb * wb, pb - nb * wb } end
 local function lisse(u) u = math.Clamp(u, 0, 1) return u * u * (3 - 2 * u) end
 
+local phase, instant = "calme", 0                 -- v90 : déclarées avant les fonctions qui les lisent
+local RETOMBE, DMAX = 1.2, 4600                    -- v90 : au siège, la tornade retombe d'abord ; portée max des veines
 -- ---------- niveaux selon la phase ----------
 local function pouls(d) return 0.55 + 0.45 * (0.5 + 0.5 * math.sin(CurTime() * 2.2 - d / 55)) end
 local function lumiere(d)                         -- lumière d'un point de veine à la distance d du pied de l'épée
@@ -106,7 +108,7 @@ end
 -- Optimisation (25/11, mesure : 16 ms par image) : tous les quads des veines dans UN maillage par image (au lieu de 3 DrawQuad
 -- par segment), géométrie calculée une seule fois par collage, halo en un ruban doux par veine (au lieu d'un sprite tous les
 -- 3,5 u, jusqu'à 5 700 par image). Q : regroupeur de quads partagé avec le lac (une seule locale : le fichier en a ~190).
-local SOL, ZI, EAU, DMAX = Vector(0, 2600, 1.0), 96, 11.0, 4600
+local SOL, ZI, EAU = Vector(0, 2600, 1.0), 96, 11.0
 local EPEE, TRONE, ASSISE = Vector(0, -65, 96), Vector(0, 255, 96), 187.5
 local VEINES = {
   {{-20.7, -124.0, 0, 2.8}, {-25.7, -114.2, 11.0, 2.72}, {-29.7, -104.0, 22.0, 2.64}, {-33.0, -93.5, 33.0, 2.56}, {-38.5, -83.9, 44.0, 2.48}, {-42.8, -73.8, 55.0, 2.4}, {-46.8, -63.6, 66.0, 2.32}, {-50.4, -53.2, 77.0, 2.24}, {-52.7, -42.4, 88.0, 2.16}, {-54.4, -31.5, 99.0, 2.08}, {-57.0, -20.9, 110.0, 2.0}, {-60.4, -10.4, 121.0, 1.92}, {-66.4, -1.2, 132.0, 1.84}, {-71.5, 8.6, 143.0, 1.76}, {-75.9, 18.6, 154.0, 1.68}, {-83.5, 26.6, 165.0, 1.6}, {-92.8, 32.5, 176.0, 1.52}, {-101.4, 39.3, 187.0, 1.44}, {-110.7, 45.2, 198.0, 1.36}, {-119.9, 51.3, 209.0, 1.28}, {-120, 55, 212.7, 1.2}},
@@ -233,7 +235,7 @@ local HALO = Material("sprites/light_glow02_add")
 local FUMEE = {}
 for k = 1, 6 do local n = "particle/smokesprites_000" .. k; if not Material(n):IsError() then FUMEE[#FUMEE + 1] = n end end
 local BOUCLE = 40
-local RETOMBE = 1.2                              -- au siège : la tornade retombe d'abord, le reste s'éteint ensuite
+-- v90 : RETOMBE (1.2) déclarée en tête            -- au siège : la tornade retombe d'abord, le reste s'éteint ensuite
 local off, fente, prochain = nil, nil, 0
 local t0 = nil                                   -- début de la boucle (nil : démo arrêtée)
 -- ---- scène complète : la boîte (relative au repère, quel que soit l'endroit du collage) et le temps des cloches ----
@@ -260,7 +262,7 @@ function SC.dans()                                -- joueur dans la boîte de la
   if d ~= SC.etat then SC.etat = d; print(string.format("[lac_boite] joueur %s de la boîte (%.0f, %.0f, %.0f du repère)", d and "dans" or "hors", x, y, z)) end
   return d or not SC.boite:GetBool()
 end
-local phase, instant = "calme", 0
+phase, instant = "calme", 0                        -- v90 : déclarées en tête
 local MIROIR, MIR_A = nil, 1                      -- tornade dessinée à l'envers (miroir du lac)
 local LAC_X0, LAC_X1, LAC_Y0, LAC_Y1 = -3787.5, 3787.5, -2287.5, 5287.5
 local LMAX = 3200
@@ -1297,6 +1299,7 @@ local function lac_profond(t)                            -- veines du fond : mag
     for i, a in ipairs(ve) do
       local l = lac_lumiere(a, t); if l > 1 then l = 1 end
       v:SetUnpacked(a[1] + ox, a[2] + oy, z); col.a = 150 * l
+      col.r, col.g, col.b = 150 * l, 12 * l, 16 * l       -- v89 : additif, l'alpha ne compte pas : la couleur porte l'intensité
       render.AddBeam(v, (34 + 10 * a[4]) * (0.6 + 0.4 * l), i * 0.15, col)
     end
     render.EndBeam()
@@ -1512,7 +1515,8 @@ local function lac_veines(t)                             -- le cœur net, qui af
       if dx * dx + dy * dy < dmax2 * 1.5 then
         render.StartBeam(#v)
         for i = 1, #v do
-          col.r, col.g, col.b, col.a = 200, 22, 24, 75 * gk.c[i]
+          local ci = gk.c[i]                                   -- v89 : additif : la couleur porte l'intensité
+          col.r, col.g, col.b, col.a = 200 * ci, 22 * ci, 24 * ci, 75 * ci
           render.AddBeam(gk.wp[i], 9 + 5 * v[i][4], i * 0.2, col)
         end
         render.EndBeam()
@@ -3397,15 +3401,16 @@ function MONO.dessin(TR, T)
     local vu = d < m.rayon or VN:Dot(dir) / d > 0.35 - m.rayon / d   -- v3 : hors champ, rien
     if vu and IsValid(m.e) then
       local I = intensite(m, TR, T)
+      if I <= 0.01 then I = 0 end                                -- v89 : éteint = rien (matériaux additifs : l'alpha 0 dessinait quand même)
       local loin = d > 5200                                      -- v3 : au loin, les fissures seules (coeur)
       if not loin then
         local vap = T >= BOUM and math.max(0, 1 - (T - BOUM) / 6) or 0
         brume(m, T, m.debout and 5 or 2, vap)
       end
-      fissures(m, I, d, loin)
-      if not loin then lave(m, I, T, nb_q) end
+      if I > 0 then fissures(m, I, d, loin) end                  -- v89
+      if not loin and I > 0 then lave(m, I, T, nb_q) end
       if m.debout then
-        if not loin then braises(m, I, T, nb_b) end
+        if not loin and I > 0 then braises(m, I, T, nb_b) end
         eclats(m, T, nb_e)
       end
     end
