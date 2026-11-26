@@ -93,7 +93,7 @@ local function mesurer(t0)
 end
 
 -- ---------- ciel noir et brouillard ----------
-hook.Add("PostDraw2DSkyBox", "a2_ferm_ciel", function()
+A2_SABLE.hook("PostDraw2DSkyBox", "a2_ferm_ciel", function()
 	if not dedans() then return end
 	render.Clear(F.COUL[1], F.COUL[2], F.COUL[3], 255, false, false)      -- plus de ciel de jour ni de soleil
 end)
@@ -105,10 +105,10 @@ local function brouillard(k)
 	render.FogColor(F.COUL[1], F.COUL[2], F.COUL[3])
 	return true
 end
-hook.Add("SetupWorldFog", "a2_ferm_brouillard", function() return brouillard(1) end)
-hook.Add("SetupSkyboxFog", "a2_ferm_brouillard", function(k) return brouillard(k) end)   -- collines du ciel 3D noyées
+A2_SABLE.hook("SetupWorldFog", "a2_ferm_brouillard", function() return brouillard(1) end)
+A2_SABLE.hook("SetupSkyboxFog", "a2_ferm_brouillard", function(k) return brouillard(k) end)   -- collines du ciel 3D noyées
 -- les maillages en script (UnlitGeneric) se dessinent après le monde : leur script appelle ce hook avant de dessiner
-hook.Add("a2_brouillard_maillages", "a2_ferm", function()
+A2_SABLE.hook("a2_brouillard_maillages", "a2_ferm", function()
 	if not dedans() then return end
 	render.FogMode(MATERIAL_FOG_LINEAR)
 	render.FogStart(F.FOGM0); render.FogEnd(F.FOGM1)
@@ -144,7 +144,7 @@ local function construireRideau()
 	end
 	mesh.End()
 end
-hook.Add("PostDrawOpaqueRenderables", "a2_ferm_rideau", function(prof, ciel)
+A2_SABLE.hook("PostDrawOpaqueRenderables", "a2_ferm_rideau", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
 	local t0 = SysTime()
 	local cle = tostring(tete:GetPos()) .. tostring(tete:GetAngles())
@@ -214,7 +214,7 @@ do
 			mat = 1 + math.floor(alea() * 4) % 4, ph = alea() * 6.28, rot = alea() * 360 }
 	end
 end
-hook.Add("PostDrawTranslucentRenderables", "a2_ferm_brume", function(prof, ciel)
+A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_ferm_brume", function(prof, ciel)
 	if prof or ciel or not dedans() then return end
 	local t0 = SysTime()
 	local t = CurTime()
@@ -255,7 +255,7 @@ hook.Add("PostDrawTranslucentRenderables", "a2_ferm_brume", function(prof, ciel)
 end)
 
 -- ---------- lumière clé froide au-dessus de la dalle ----------
-hook.Add("Think", "a2_ferm_lumiere", function()
+A2_SABLE.hook("Think", "a2_ferm_lumiere", function()
 	if not dedans() then return end
 	local d = DynamicLight(F.LUM_ID)
 	if not d then return end
@@ -297,7 +297,7 @@ local function dessinNuit(self)
 	render.SuppressEngineLighting(false)
 end
 local nuits, prochaineNuit = {}, 0
-hook.Add("Think", "a2_ferm_nuit", function()
+A2_SABLE.hook("Think", "a2_ferm_nuit", function()
 	if CurTime() < prochaineNuit then return end
 	prochaineNuit = CurTime() + 1
 	if not etat.allume or not majTete() then
@@ -315,8 +315,8 @@ hook.Add("Think", "a2_ferm_nuit", function()
 	end
 end)
 -- autres scripts : éclairer un objet dessiné à la main, ou confier une entité client (doublures du banc)
-hook.Add("a2_eclairage_nuit", "a2_ferm", function(pw) if not dedans() then return end eclairerNuit(pw) return true end)
-hook.Add("a2_eclairer", "a2_ferm", function(e) if IsValid(e) then e.RenderOverride = dessinNuit; nuits[e] = true end end)
+A2_SABLE.hook("a2_eclairage_nuit", "a2_ferm", function(pw) if not dedans() then return end eclairerNuit(pw) return true end)
+A2_SABLE.hook("a2_eclairer", "a2_ferm", function(e) if IsValid(e) then e.RenderOverride = dessinNuit; nuits[e] = true end end)
 
 -- ---------- commandes ----------
 concommand.Add("a2_fermeture", function(_, _, args)
@@ -340,7 +340,7 @@ local function masquable(e)
 	for _, motif in ipairs(MASQUABLES) do if string.find(m, motif) then return true end end
 	return false
 end
-hook.Add("Think", "a2_ferm_masquer", function()
+A2_SABLE.hook("Think", "a2_ferm_masquer", function()
 	if CurTime() < prochainMasque then return end
 	prochainMasque = CurTime() + 1
 	local voulu = etat.masquer and dedans()
@@ -374,3 +374,12 @@ concommand.Add("a2_fermeture_mesure", function()
 end)
 
 print("[a2_fermeture] chargée passe 17")   -- trace de chargement (rechargement à chaud vérifiable dans la console)
+
+A2_SABLE.surExtinction(function()               -- a2_tout_effacer : rideau, pénombre, nuit et masquage défaits
+	if rideau then rideau:Destroy() end
+	if penombre then penombre:Destroy() end
+	rideau, cleRideau, penombre, clePenombre = nil, nil, nil, nil
+	for e in pairs(nuits) do if IsValid(e) then e.RenderOverride = nil end nuits[e] = nil end
+	for e in pairs(masques) do if IsValid(e) then e:SetNoDraw(false) end masques[e] = nil end
+	tete, prochaineRecherche, dedansCache, dedansImage = nil, 0, false, -1
+end)

@@ -84,6 +84,7 @@ local repere = nil                               -- repère reçu du serveur (ni
 C.ancreIndex, C.ancreDesignee, C.nbCandidats = 0, false, 0
 
 function C.recevoirAncre(index, pos, ang, designee)   -- appelé à chaque état reçu (cl_sequence.lua)
+  C.rallumer()                                   -- éteinte par a2_tout_effacer : le build est revenu
   C.ancreIndex, C.ancreDesignee = index, designee
   if repere and repere.p:DistToSqr(pos) < 0.01 and repere.a == ang then return end   -- inchangé : caches gardés
   if not repere then print(string.format("[A2] ancre reçue du serveur : %.0f %.0f %.0f", pos.x, pos.y, pos.z)) end
@@ -96,6 +97,7 @@ function C.perdreAncre()                         -- le serveur ne voit plus le b
 end
 
 function C.tete()
+  if C.eteint then return nil end
   if repere then mode = C.ancreDesignee and "serveur (désignée par le MJ)" or "serveur (gravure ou motif)" return repere end
   local now = CurTime()                          -- secours : aucun état reçu encore
   if now >= prochain then
@@ -112,6 +114,11 @@ end
 function C.modeAncre() return mode end
 function C.repereServeur() return repere end
 
-hook.Add("OnEntityCreated", "a2_sable_ancre", function(e)   -- collage en cours : on recherche bientôt (secours)
+C.hook("OnEntityCreated", "a2_sable_ancre", function(e)   -- collage en cours : on recherche bientôt (secours)
   if IsValid(e) and not repere and not IsValid(cache) then prochain = math.min(prochain, CurTime() + 0.5) end
+end)
+
+C.surExtinction(function()                       -- a2_tout_effacer : repère et recherche oubliés
+  repere, cache, prochain, mode = nil, NULL, 0, "aucune"
+  C.ancreIndex, C.ancreDesignee, C.nbCandidats = 0, false, 0
 end)

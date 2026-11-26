@@ -205,7 +205,7 @@ local function construire()
 	end
 end
 
-hook.Add("PostDrawOpaqueRenderables", "a2_dunes_lointaines", function(prof, ciel)
+A2_SABLE.hook("PostDrawOpaqueRenderables", "a2_dunes_lointaines", function(prof, ciel)
 	if prof or ciel or not etat.allume or not DONNEES then return end
 	if CurTime() >= prochaineRecherche then
 		prochaineRecherche = CurTime() + 1
@@ -225,4 +225,9 @@ end)
 concommand.Add("a2_dunes", function(_, _, args)
 	etat.allume = tonumber(args[1] or "") == 1
 	print("[a2_dunes] " .. (etat.allume and "allumé" or "éteint"))
+end)
+
+A2_SABLE.surExtinction(function()               -- a2_tout_effacer : maillages détruits, repère oublié
+	for _, l in pairs(meshes or {}) do for _, m in ipairs(l) do m:Destroy() end end
+	meshes, cle, tete, prochaineRecherche = nil, nil, nil, 0
 end)
