@@ -33,6 +33,7 @@ Aucun prop ne traverse le sable (vérifié sur la géométrie de la map).
 | `lua/lac_noir/cl_scene.lua` | clients : le rendu de la scène et ses sons |
 | `lua/lac_noir/sv_lancement.lua` | serveur : la séquence en cours, partagée par tous, et les joueurs qui arrivent en cours |
 | `lua/lac_noir/sv_sons.lua` | serveur : envoi des sons de cloche (`sound/lac_noir/`) |
+| `lua/lac_noir/sv_effacer.lua` | serveur : `lac_noir_effacer`, le retrait du build |
 
 **Qui peut mener la scène** : les admins du serveur (`ADMINS = true`) et les SteamID listés dans `sh_config.lua`. Les autres joueurs voient et entendent seulement.
 
@@ -40,11 +41,15 @@ Aucun prop ne traverse le sable (vérifié sur la géométrie de la map).
 
 | Commande | Effet |
 |---|---|
-| + du pavé numérique, `lac_noir_suite` | séquence suivante, chez tout le monde (la 1 au départ) |
-| - du pavé numérique, `lac_noir_precedente` | séquence précédente (elle repart de son début) |
+| `lac_noir_suite` | séquence suivante, chez tout le monde (la 1 au départ) |
+| `lac_noir_precedente` | séquence précédente (elle repart de son début) |
 | `lac_noir_sequence N` | aller à la séquence N (1 à 9) |
 | `lac_noir_arreter` | tout arrêter pour tout le monde |
+| `lac_noir_effacer`, deux fois en 10 s | arrête la scène et retire le build : les props aux modèles du dupe, dans la boîte de la scène. Avec un prop protect (CPPI), seulement ceux de qui efface, ou n'importe lesquels pour un admin |
 | `lac_eau_stop` | (chaque joueur) couper la scène chez soi seulement |
+
+Pour mener la scène sans ouvrir la console, chacun lie les touches qu'il veut, par exemple :
+`bind KP_PLUS lac_noir_suite` et `bind KP_MINUS lac_noir_precedente`.
 
 Chaque séquence joue puis tient sa dernière image jusqu'à la suivante. Un joueur qui arrive ou qui entre dans la zone
 reprend la séquence en cours.

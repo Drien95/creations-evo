@@ -6,6 +6,7 @@ if SERVER then
   include("lac_noir/sh_config.lua")
   include("lac_noir/sv_lancement.lua")
   include("lac_noir/sv_sons.lua")
+  include("lac_noir/sv_effacer.lua")
 else
   include("lac_noir/sh_config.lua")
   include("lac_noir/cl_scene.lua")

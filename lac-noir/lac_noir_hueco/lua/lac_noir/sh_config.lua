@@ -1,6 +1,6 @@
 -- Lac noir de Nobleza : données communes au serveur et au client.
 LAC_NOIR = LAC_NOIR or {}
--- Qui mène la scène (+ et - du pavé numérique, lac_noir_suite, precedente, sequence, arreter) : les admins du serveur si
+-- Qui mène la scène (lac_noir_suite, precedente, sequence, arreter) : les admins du serveur si
 -- ADMINS = true, et les SteamID listés (STEAM_0:x:y ou SteamID64). Les autres joueurs voient et entendent seulement.
 LAC_NOIR.ADMINS = true
 LAC_NOIR.AUTORISES = {

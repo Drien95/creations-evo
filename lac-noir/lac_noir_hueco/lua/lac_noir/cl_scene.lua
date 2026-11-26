@@ -494,7 +494,12 @@ local PIECES = {}                                 -- scène complète : monolith
 -- ---------- repérage : le dupe collé, la fente du trône ----------
 local function reperer()
   local d = ents.FindByModel(REF)
-  if #d ~= 1 then off = nil return end
+  if #d ~= 1 then                                  -- v85 : build retiré (ou pas encore collé) : plus rien du tout
+    off = nil
+    if t0 then t0 = nil; SC.couper(); RunConsoleCommand("stopsound") end
+    if CATH and CATH.oublier then CATH.oublier() end
+    return
+  end
   off = d[1]:GetPos() - SOL
   if CATH then CATH.reperer(off) end
   local m = ents.FindByModel(MOITIE)
@@ -1867,22 +1872,6 @@ end
 -- version Hueco : pas de photos de contrôle
 
 SC.boucles = {}                                   -- v78 : sons en boucle en cours
-SC.TOUCHES, SC.appuye = { [KEY_PAD_PLUS] = "lac_noir_suite", [KEY_PAD_MINUS] = "lac_noir_precedente" }, {}   -- v83
-function SC.droit(p)
-  local c = LAC_NOIR
-  if not c then return true end
-  return (c.ADMINS and p:IsAdmin()) or (c.AUTORISES and (c.AUTORISES[p:SteamID()] or c.AUTORISES[p:SteamID64()])) or false
-end
-hook.Add("Think", "lac_noir_touches", function()
-  local p = LocalPlayer()
-  if not IsValid(p) or vgui.GetKeyboardFocus() or gui.IsGameUIVisible() or gui.IsConsoleVisible() or p:IsTyping() then return end
-  if not SC.droit(p) then return end
-  for k, cmd in pairs(SC.TOUCHES) do
-    local bas = input.IsKeyDown(k)
-    if bas and not SC.appuye[k] then RunConsoleCommand(cmd) end
-    SC.appuye[k] = bas
-  end
-end)
 function SC.onde(p, T)                            -- v81 : 0 avant le passage de l'onde du boum, 1 après ; instant du passage
   if not SC.EW or not T then return 0, 1e9 end
   local dx, dy = p.x - SC.EW.x, p.y - SC.EW.y
@@ -2870,7 +2859,7 @@ local coupe = false                                     -- vrai pendant la mesur
 local partout = CreateClientConVar("lac_cath_partout", "0", false, false)
 local dans, zone_t = false, 0
 local function zone()
-  if coupe or M.coupee or not actif:GetBool() then return false end
+  if coupe or M.coupee or not actif:GetBool() or not off then return false end   -- v85 : sans build, rien
   if M.T then return off ~= nil end                     -- scène complète : dessinée pendant la démo du lac
   if zone_t > CurTime() then return dans end
   zone_t = CurTime() + 0.5
@@ -2903,6 +2892,7 @@ end
 
 local verif = 0
 local brume_props                                         -- définie plus bas, avec la brume
+function M.oublier() off = nil; M.T, M.TR, M.actif = nil, nil, false end   -- v85 : build retiré
 function M.reperer(o)                                     -- appelé par le repérage du lac (une fois par seconde)
   M.coupee = file.Exists("lac_mesure/cath_off.txt", "DATA")   -- mesure « lac seul » sans console ni focus
   if mes:GetBool() and not mesure_actif then mesure_actif = true; RunConsoleCommand("lac_cath_partout", "1") end
@@ -3967,6 +3957,10 @@ end
 
 -- v5 : dessinée par le lac après le colormod (comme les autres pièces) : le colormod pâlissait couronne et liseré.
 -- Loin derrière la cathédrale, avec le test de profondeur : flèches et lames passent devant.
+EC.MERS = { { -0.28, 0.22, 0.34, 120 }, { 0.12, 0.34, 0.26, 105 }, { 0.22, -0.05, 0.22, 95 },
+  { -0.05, -0.32, 0.2, 90 }, { -0.42, -0.1, 0.16, 110 } }   -- v84 : x, y, rayon (en rayons de lune), opacité
+EC.CRATERES = { { 0.45, 0.42, 0.07 }, { -0.12, -0.58, 0.09 }, { 0.55, -0.35, 0.06 }, { -0.6, 0.35, 0.05 },
+  { 0.3, 0.6, 0.045 }, { -0.35, -0.45, 0.05 }, { 0.05, 0.08, 0.04 }, { 0.68, 0.1, 0.05 } }
 function EC.dessin(TR, T)
   TA = T + (EC.H or 0)
   if not T or EC.coupee then return end
@@ -3982,6 +3976,13 @@ function EC.dessin(TR, T)
   if p < 1 then                                      -- le soleil pâle (caché peu à peu)
     render.SetColorMaterial()
     disque(0, 0, 1, 235, 232, 225, 255)
+    for _, m in ipairs(EC.MERS) do disque(m[1], m[2], m[3], 168, 166, 160, m[4]) end      -- v84 : mers
+    for _, c in ipairs(EC.CRATERES) do                                                   -- v84 : cratères
+      disque(c[1] - 0.012, c[2] + 0.012, c[3], 250, 248, 242, 150)                       -- rebord éclairé
+      disque(c[1], c[2], c[3] * 0.82, 150, 148, 142, 190)                                -- fond dans l'ombre
+    end
+    anneau(0.72, 1.0, 70, 68, 64, 0, 150)                                                -- v84 : bord assombri
+    disque(0.38, -0.3, 1.0, 30, 30, 34, 95)                                              -- v84 : ombre de la sphère
   end
   if p > 0.6 then                                    -- v3 : la couronne, anneaux lumineux et jets autour du disque noir
     local k = lisse((p - 0.6) / 0.4) * (1 + fl)
