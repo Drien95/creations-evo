@@ -1,4 +1,4 @@
--- Généré par dalle/plan_lua.py depuis la scène du dupe : ne pas éditer à la main.
+-- Généré par plan_lua.py (dossier a2-sable-du-fond) depuis la scène du dupe : ne pas éditer à la main.
 -- Les 79 props du dupe A2 v15, positions relatives à la tête (plate5x5 du sol, angle nul dans le build).
 return {
   { modele = "models/hunter/plates/plate5x5.mdl", pos = Vector(0.0, 0.0, 0.0) },

@@ -41,7 +41,7 @@ deuxième vague.
 | `lua/a2_sable_du_fond/sh_ancre.lua` | serveur et clients : l'ancre, reconnue par la gravure, sinon par le motif de props |
 | `lua/a2_sable_du_fond/sv_scene.lua` | serveur : l'état de la scène, les commandes, l'envoi aux joueurs de la boîte |
 | `lua/a2_sable_du_fond/sv_retirer.lua` | serveur : `a2_tout_effacer` (et son ancien nom `a2_retirer`), l'effacement total |
-| `lua/a2_sable_du_fond/sv_plan.lua` | serveur : les 79 props du dupe et leur place, pour ne retirer que ce build (généré par `dalle/plan_lua.py`) |
+| `lua/a2_sable_du_fond/sv_plan.lua` | serveur : les 79 props du dupe et leur place, pour ne retirer que ce build (généré par [`plan_lua.py`](plan_lua.py) depuis la scène du dupe) |
 | `lua/a2_sable_du_fond/cl_sequence.lua` | clients : vagues, pierres, signatures, socle, fil d'Injerto |
 | `lua/a2_sable_du_fond/cl_fermeture.lua` | clients : nuit, faisceau, brume, ciel, dans la boîte seulement |
 | `lua/a2_sable_du_fond/cl_sable.lua` | clients : la surface de sable et ses rides |
