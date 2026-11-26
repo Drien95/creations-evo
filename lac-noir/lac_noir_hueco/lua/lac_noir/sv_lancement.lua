@@ -72,7 +72,7 @@ local function autorise(ply)                     -- joueur invalide = console du
 end
 
 local function dire(ply, texte)
-  if IsValid(ply) then ply:PrintMessage(HUD_PRINTTALK, texte) end
+  if IsValid(ply) then ply:PrintMessage(HUD_PRINTCONSOLE, texte) end   -- console seulement, jamais le chat ni une notification
   print(texte)
 end
 
