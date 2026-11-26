@@ -49,10 +49,12 @@ concommand.Add("lac_noir_sequence", function(ply, _, args)
   aller(ply, math.floor(tonumber(args[1] or "") or 0))
 end)
 
+function LAC_NOIR.arreter() k, depart = 0, 0; envoyer() end
+LAC_NOIR.autorise, LAC_NOIR.dire = autorise, dire        -- pour sv_effacer.lua
+
 concommand.Add("lac_noir_arreter", function(ply)
   if not autorise(ply) then return end
-  k, depart = 0, 0
-  envoyer()
+  LAC_NOIR.arreter()
   dire(ply, "[Lac noir] scène arrêtée pour tous")
 end)
 
