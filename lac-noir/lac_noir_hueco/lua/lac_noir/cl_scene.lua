@@ -1867,22 +1867,6 @@ end
 -- version Hueco : pas de photos de contrôle
 
 SC.boucles = {}                                   -- v78 : sons en boucle en cours
-SC.TOUCHES, SC.appuye = { [KEY_PAD_PLUS] = "lac_noir_suite", [KEY_PAD_MINUS] = "lac_noir_precedente" }, {}   -- v83
-function SC.droit(p)
-  local c = LAC_NOIR
-  if not c then return true end
-  return (c.ADMINS and p:IsAdmin()) or (c.AUTORISES and (c.AUTORISES[p:SteamID()] or c.AUTORISES[p:SteamID64()])) or false
-end
-hook.Add("Think", "lac_noir_touches", function()
-  local p = LocalPlayer()
-  if not IsValid(p) or vgui.GetKeyboardFocus() or gui.IsGameUIVisible() or gui.IsConsoleVisible() or p:IsTyping() then return end
-  if not SC.droit(p) then return end
-  for k, cmd in pairs(SC.TOUCHES) do
-    local bas = input.IsKeyDown(k)
-    if bas and not SC.appuye[k] then RunConsoleCommand(cmd) end
-    SC.appuye[k] = bas
-  end
-end)
 function SC.onde(p, T)                            -- v81 : 0 avant le passage de l'onde du boum, 1 après ; instant du passage
   if not SC.EW or not T then return 0, 1e9 end
   local dx, dy = p.x - SC.EW.x, p.y - SC.EW.y

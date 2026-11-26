@@ -1,6 +1,6 @@
 # Lac noir de Nobleza : scénario
 
-Neuf séquences, menées à la main (+ du pavé numérique). Chacune joue puis tient sa dernière image.
+Neuf séquences, menées à la main (`lac_noir_suite`). Chacune joue puis tient sa dernière image.
 
 | N | Séquence | Durée | Ce qui se passe |
 |---|---|---|---|

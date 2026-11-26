@@ -40,11 +40,14 @@ Aucun prop ne traverse le sable (vérifié sur la géométrie de la map).
 
 | Commande | Effet |
 |---|---|
-| + du pavé numérique, `lac_noir_suite` | séquence suivante, chez tout le monde (la 1 au départ) |
-| - du pavé numérique, `lac_noir_precedente` | séquence précédente (elle repart de son début) |
+| `lac_noir_suite` | séquence suivante, chez tout le monde (la 1 au départ) |
+| `lac_noir_precedente` | séquence précédente (elle repart de son début) |
 | `lac_noir_sequence N` | aller à la séquence N (1 à 9) |
 | `lac_noir_arreter` | tout arrêter pour tout le monde |
 | `lac_eau_stop` | (chaque joueur) couper la scène chez soi seulement |
+
+Pour mener la scène sans ouvrir la console, chacun lie les touches qu'il veut, par exemple :
+`bind KP_PLUS lac_noir_suite` et `bind KP_MINUS lac_noir_precedente`.
 
 Chaque séquence joue puis tient sa dernière image jusqu'à la suivante. Un joueur qui arrive ou qui entre dans la zone
 reprend la séquence en cours.
