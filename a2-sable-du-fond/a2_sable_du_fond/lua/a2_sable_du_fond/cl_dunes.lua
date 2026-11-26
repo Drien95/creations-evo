@@ -214,8 +214,8 @@ A2_SABLE.hook("PostDrawOpaqueRenderables", "a2_dunes_lointaines", function(prof,
 	if not IsValid(tete) then return end
 	local M = materiaux()
 	if not M then return end
-	local nouvelle = tostring(tete:GetPos()) .. tostring(tete:GetAngles())
-	if nouvelle ~= cle or not meshes then cle = nouvelle; construire() end
+	if not A2_SABLE.cameraPres(tete) then return end   -- loin de la scène : rien à dessiner
+	if tete ~= cle or not meshes then cle = tete; construire() end   -- repère du serveur : nouvel objet s'il bouge
 	hook.Run("a2_brouillard_maillages")
 	render.SetMaterial(M.base); for _, m in ipairs(meshes.base) do m:Draw() end
 	render.SetMaterial(M.detail); for _, m in ipairs(meshes.detail) do m:Draw() end

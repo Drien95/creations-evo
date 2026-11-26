@@ -62,6 +62,11 @@ local places = {}
 for i = 1, #S.PLACES do places[i] = { on = false, res = "reussite", t0 = 0, joueur = nil, sig = S.SIGS[(i - 1) % #S.SIGS + 1] } end
 
 local MAT_POUSS = { Material("particle/smokesprites_0001"), Material("particle/smokesprites_0003") }
+local COUL_TMP = Color(0, 0, 0, 0)               -- une seule couleur réutilisée par les dessins de chaque image
+local function coulTmp(r, g, b, a)               -- mêmes bornes que Color() : plafonnée à 255
+	COUL_TMP.r, COUL_TMP.g, COUL_TMP.b, COUL_TMP.a = math.min(r, 255), math.min(g, 255), math.min(b, 255), math.min(a or 255, 255)
+	return COUL_TMP
+end
 local MAT_LUEUR = Material("sprites/light_glow02_add")
 local MAT_BLANC = Material("models/debug/debugwhite")
 local MAT_ASSISE = Material("phoenix_storms/concrete2")
@@ -196,7 +201,7 @@ local function dessinerPoussiere(v, t)
 				local tail = (22 + 30 * j * j) * tc * v.force
 				render.SetMaterial(MAT_POUSS[1 + ((i + c) % 2)])
 				render.DrawSprite(versMonde(math.cos(a) * ri, math.sin(a) * ri, z), tail, tail * 0.85,
-					Color(205 - 15 * c, 200 - 15 * c, 192 - 15 * c, (120 + 60 * j) * env * ac * plonge))
+					coulTmp(205 - 15 * c, 200 - 15 * c, 192 - 15 * c, (120 + 60 * j) * env * ac * plonge))
 			end
 		end
 	end
@@ -308,7 +313,7 @@ local function dessinerEclats(x, y, z, de, j, m, coul)
 	if de < 1.2 then                         -- bouffée de poussière blanche
 		local al = 120 * (1 - de / 1.2)
 		render.SetMaterial(MAT_POUSS[1])
-		render.DrawSprite(versMonde(x, y, z + 4 + 10 * de), 20 + 40 * de, 14 + 30 * de, Color(coul, coul, coul, al))
+		render.DrawSprite(versMonde(x, y, z + 4 + 10 * de), 20 + 40 * de, 14 + 30 * de, coulTmp(coul, coul, coul, al))
 	end
 end
 
@@ -880,7 +885,7 @@ local function dessinerSignature(p, i, t)        -- pouls en couleur : halo au s
 	local cx, cy = centrePlace(i)
 	render.SetMaterial(MAT_LUEUR)              -- halo large et doux au sol
 	render.DrawQuadEasy(versMonde(cx, cy, sol(250, math.rad(S.PLACES[i])) + 1.5), etat.tete:GetUp(), 150, 150,
-		Color(s[1] * k, s[2] * k, s[3] * k, 255), 0)
+		coulTmp(s[1] * k, s[2] * k, s[3] * k, 255), 0)
 	render.SetMaterial(MAT_ADD)                -- anneau qui respire avec le pouls
 	render.CullMode(MATERIAL_CULLMODE_NONE)
 	mesh.Begin(MATERIAL_QUADS, 48 * 2)
@@ -897,7 +902,7 @@ local function dessinerSignature(p, i, t)        -- pouls en couleur : halo au s
 		local x, y = cx + math.cos(ang) * rr, cy + math.sin(ang) * rr
 		local al = 255 * math.sin(u * math.pi) * attenue
 		render.DrawSprite(versMonde(x, y, sol(math.sqrt(x * x + y * y), math.atan2(y, x)) + 2 + 34 * u), 8, 8,
-			Color(s[1] * al / 255, s[2] * al / 255, s[3] * al / 255, 255))
+			coulTmp(s[1] * al / 255, s[2] * al / 255, s[3] * al / 255, 255))
 	end
 end
 
@@ -919,7 +924,7 @@ A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_seq_effets", function(prof, 
 					local bx, by, bz = basePierre(i, j)
 					local h = math.max(z - bz, 0)
 					render.SetMaterial(MAT_TRACE)
-					render.DrawQuadEasy(versMonde(x, y, math.min(z, bz) - 1.9), etat.tete:GetUp(), 9 + h, 9 + h, Color(10, 10, 12, 170 / (1 + 0.4 * h)), 0)
+					render.DrawQuadEasy(versMonde(x, y, math.min(z, bz) - 1.9), etat.tete:GetUp(), 9 + h, 9 + h, coulTmp(10, 10, 12, 170 / (1 + 0.4 * h)), 0)
 					render.SetMaterial(MAT_LUEUR)
 				end
 				local glisse = (p.res == "partiel" and j == 2) or p.res == "echec"
@@ -931,16 +936,16 @@ A2_SABLE.hook("PostDrawTranslucentRenderables", "a2_seq_effets", function(prof, 
 						local tx, ty = bx + (x - bx) * u, by + (y - by) * u
 						local rr = math.sqrt(tx * tx + ty * ty)
 						render.SetMaterial(MAT_TRACE)
-						render.DrawQuadEasy(versMonde(tx, ty, sol(rr, math.atan2(ty, tx)) + 1.2), etat.tete:GetUp(), 10, 10, Color(22, 20, 19, 180 * u), k * 40)
+						render.DrawQuadEasy(versMonde(tx, ty, sol(rr, math.atan2(ty, tx)) + 1.2), etat.tete:GetUp(), 10, 10, coulTmp(22, 20, 19, 180 * u), k * 40)
 					end
 					if p.res == "echec" then
-						render.DrawQuadEasy(versMonde(x, y, sol(math.sqrt(x * x + y * y), math.atan2(y, x)) + 1.3), etat.tete:GetUp(), 16, 16, Color(18, 16, 15, 170), 0)
+						render.DrawQuadEasy(versMonde(x, y, sol(math.sqrt(x * x + y * y), math.atan2(y, x)) + 1.3), etat.tete:GetUp(), 16, 16, coulTmp(18, 16, 15, 170), 0)
 					end
 					render.SetMaterial(MAT_LUEUR)
 				end
 				if vis then
 					local l = 150 * lueur
-					render.DrawSprite(versMonde(x, y, z + 1), 16 + 18 * lueur, 16 + 18 * lueur, Color(l, l, l * 1.05, 255))
+					render.DrawSprite(versMonde(x, y, z + 1), 16 + 18 * lueur, 16 + 18 * lueur, coulTmp(l, l, l * 1.05, 255))
 				end
 			end
 		end
