@@ -1007,6 +1007,7 @@ end)
 local recu = nil                                 -- heure et vagues du dernier état reçu (a2_diag)
 local RESULTATS = A2_SABLE and A2_SABLE.RESULTATS or { "reussite", "crit", "partiel", "echec", "fiasco" }
 net.Receive(A2_SABLE.NET, function()
+	if not net.ReadBool() then A2_SABLE.perdreAncre() recu = { t = CurTime(), n = 0, sans = true } return end
 	local n = net.ReadUInt(8)
 	local vagues = {}
 	for i = 1, net.ReadUInt(2) do
@@ -1019,7 +1020,9 @@ net.Receive(A2_SABLE.NET, function()
 		if places[i] then places[i].on, places[i].res, places[i].t0, places[i].sig = on, res, t0, sig end
 	end
 	etat.adler = net.ReadEntity()
-	A2_SABLE.ancreIndex = net.ReadUInt(16)
+	local index, pos, ang, designee = net.ReadUInt(16), net.ReadVector(), net.ReadAngle(), net.ReadBool()
+	A2_SABLE.recevoirAncre(index, pos, ang, designee)
+	etat.prochain = 0                            -- repère relu tout de suite
 	recu = { t = CurTime(), n = n }
 	etat.n, etat.vagues = n, vagues
 	-- souffle d'Adler : une seule fois par vague, et seulement si elle vient de partir (pas pour qui arrive en retard)
@@ -1035,9 +1038,15 @@ concommand.Add("a2_diag", function()
 	local C = A2_SABLE
 	local t = C.tete()
 	print("[A2] diag : addon client chargé ; map " .. game.GetMap() .. (C.carteOk() and " (acceptée)" or " (refusée)"))
-	print("[A2] diag : ancre " .. (t and (t:EntIndex() .. ", " .. C.modeAncre()) or "introuvable") ..
-		" ; plate5x5 vues " .. #ents.FindByModel(C.MODELE_TETE) .. " ; builds reconnus " .. C.nbCandidats ..
-		(C.ancreIndex > 0 and (" ; ancre MJ " .. C.ancreIndex .. (IsValid(Entity(C.ancreIndex)) and "" or " (pas encore reçue par ce client)")) or ""))
+	local r = C.repereServeur()
+	if r then
+		local p, a = r:GetPos(), r:GetAngles()
+		print(string.format("[A2] diag : ancre reçue du serveur : %.0f %.0f %.0f, angle %.0f°, prop %d%s", p.x, p.y, p.z, a.y,
+			C.ancreIndex, C.ancreDesignee and " (désignée par le MJ)" or " (motif)"))
+	else
+		print("[A2] diag : aucune ancre reçue du serveur ; " .. (t and ("secours : " .. C.modeAncre()) or "build introuvable côté client"))
+	end
+	print("[A2] diag : plate5x5 vues par ce client " .. #ents.FindByModel(C.MODELE_TETE))
 	print("[A2] diag : dans la boîte " .. tostring(dedans()))
 	if recu then
 		print(string.format("[A2] diag : dernier état reçu il y a %.0f s : %d vague(s)", CurTime() - recu.t, recu.n))

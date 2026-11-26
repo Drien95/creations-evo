@@ -1,4 +1,4 @@
--- A2 « Le Sable du Fond » : chargeur. Rien ne charge sur une map absente de sh_config.lua (CARTES).
+-- A2 « Le Sable du Fond » : chargeur. Rien ne charge sur une map absente de CARTES (sh_config.lua) et de data/a2_sable_du_fond_cartes.txt.
 AddCSLuaFile()
 AddCSLuaFile("a2_sable_du_fond/sh_config.lua")
 include("a2_sable_du_fond/sh_config.lua")

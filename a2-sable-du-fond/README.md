@@ -18,14 +18,16 @@ deuxième vague.
 - Sur un sol plat de la zone de build. Le sable, les rides et la cuvette sont dessinés en script autour de la dalle.
 - Figé. Il peut être tourné (testé au banc tourné de 37°).
 - Pour qu'il reste : PermaProps, par le staff.
-- **Ancre** : la scène retrouve le build par un motif de props du dupe : une plaque 5x5 du sol, les deux disques de la dalle et le bloc invisible de la place 1, à leur place les uns par rapport aux autres. Ni couleur, ni matériau, ni propriétaire, ni classe ne comptent : les plaques des autres builds ne la trompent pas. Tout se cale dessus, où que le build soit posé : aucune coordonnée de map dans l'addon.
+- **Ancre** : c'est le **serveur** qui retrouve le build (il voit toutes les entités) et qui envoie sa position et son angle aux joueurs ; les clients ne cherchent rien eux-mêmes. Le serveur le reconnaît par un motif de props du dupe : une plaque 5x5 du sol, les deux disques de la dalle et le bloc invisible de la place 1, à leur place les uns par rapport aux autres. Ni couleur, ni matériau, ni propriétaire, ni classe ne comptent : les plaques des autres builds ne la trompent pas. Tout se cale dessus, où que le build soit posé : aucune coordonnée de map dans l'addon.
 - Si le motif n'est pas reconnu (props manquants), le MJ désigne l'ancre avec `a2_ancre` (voir plus bas).
+- Le serveur l'écrit en console, et dans le chat de qui a mené la scène : « [A2] build repéré à x y z (angle) », ou « [A2] build introuvable : vise-le et tape a2_ancre ». Sans build repéré, `a2_lancer` et `a2_suivante` refusent et le disent. Si le build est retiré ou déplacé, les joueurs suivent (scène éteinte ou recalée).
 - Boîte de la scène : 3 600 × 3 600 u autour de la dalle, de 200 u sous elle à 700 u au-dessus. Dehors, rien ne change : ni nuit, ni brume, ni son.
 
 ## Installer l'addon (staff du serveur)
 
 1. Copier le dossier `a2_sable_du_fond` dans `garrysmod/addons/` du serveur.
 2. Redémarrer le serveur (ou changer de map). L'addon ne charge rien sur une map dont le nom ne contient pas « hueco » (`CARTES` dans `sh_config.lua`).
+   Serveur de test sur une autre map : écrire un mot du nom de la map par ligne dans `garrysmod/data/a2_sable_du_fond_cartes.txt` (côté serveur), par exemple `flatgrass`. Sans ce fichier, la console serveur dit pourquoi l'addon ne charge pas.
 3. Rien à installer chez les joueurs : le serveur leur envoie les scripts. Les sons sont ceux du jeu de base.
 
 | Fichier | Où il tourne |
@@ -70,7 +72,7 @@ Les réponses des commandes s'écrivent dans la console de qui les tape.
 | Ligne | Ce qu'elle dit | Si ça ne va pas |
 |---|---|---|
 | addon client chargé, map (acceptée) | le script client est arrivé et la map est bonne | rien ne s'affiche du tout : addon pas installé, ou map refusée (`CARTES`) |
-| ancre, plate5x5 vues, builds reconnus | le build est retrouvé (motif ou désigné par le MJ) | « introuvable » : props du motif manquants, le MJ tape `a2_ancre` en visant la plaque du coin |
+| ancre reçue du serveur | position, angle et prop de l'ancre envoyés par le serveur (motif ou désignée par le MJ) | « aucune ancre reçue » : regarder la console serveur (« build repéré » ou « introuvable »), le MJ tape `a2_ancre` en visant le build |
 | dans la boîte | le joueur est bien dans la zone de la scène | |
 | dernier état reçu | ce que le serveur a envoyé (vagues, places) | « aucun état reçu » : le MJ n'a encore rien lancé, ou le serveur ne reconnaît pas le build (`a2_etat` côté MJ) |
 

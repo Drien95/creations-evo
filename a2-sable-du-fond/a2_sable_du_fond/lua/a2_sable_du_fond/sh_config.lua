@@ -21,10 +21,20 @@ C.NB_PLACES = 4
 C.RESULTATS = { "reussite", "crit", "partiel", "echec", "fiasco" }   -- l'ordre sert au message réseau
 C.SIGS = { { 240, 125, 50 }, { 175, 95, 235 }, { 60, 215, 135 }, { 235, 70, 110 } }   -- signatures par défaut
 
+-- Maps en plus, pour un serveur de test : un mot par ligne dans garrysmod/data/a2_sable_du_fond_cartes.txt (serveur).
+C.FICHIER_CARTES = "a2_sable_du_fond_cartes.txt"
 function C.carteOk()
-  local carte = string.lower(game.GetMap() or "")
-  if carte == "" then return CLIENT == true end    -- client qui ne connaît pas encore la map : le serveur a déjà filtré
-  for _, mot in ipairs(C.CARTES) do if string.find(carte, mot, 1, true) then return true end end
+  if CLIENT then                                 -- le client suit le serveur : il a reçu le script client ou non
+    return file.Exists("a2_sable_du_fond/cl_sequence.lua", "LUA")
+  end
+  local mots = table.Copy(C.CARTES)
+  for ligne in string.gmatch(file.Read(C.FICHIER_CARTES, "DATA") or "", "[^\r\n]+") do
+    local m = string.Trim(string.lower(ligne))
+    if m ~= "" and #mots < 32 then mots[#mots + 1] = m end
+  end
+  local carte = string.lower(game.GetMap())
+  for _, mot in ipairs(mots) do if string.find(carte, mot, 1, true) then return true end end
+  print("[A2] addon non chargé : la map " .. carte .. " n'est pas dans CARTES ni dans data/" .. C.FICHIER_CARTES)
   return false
 end
 

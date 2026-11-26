@@ -52,32 +52,60 @@ end
 
 if SERVER then return end
 
--- ---------- client : une seule recherche partagée par les quatre scripts ----------
+-- ---------- client : le repère envoyé par le serveur (seul autoritaire) ----------
+-- Le serveur voit toutes les entités ; il envoie la position et l'angle de l'ancre dans l'état. Le client en fait un
+-- repère (mêmes méthodes qu'une entité : LocalToWorld, WorldToLocal, GetUp...) sans rien chercher lui-même.
+-- Recherche par motif côté client seulement en secours, tant qu'aucun état n'est reçu.
+local Repere = {}
+Repere.__index = Repere
+function Repere:IsValid() return true end
+function Repere:GetPos() return Vector(self.p) end
+function Repere:GetAngles() return Angle(self.a) end
+function Repere:LocalToWorld(v) return self.m * v end
+function Repere:WorldToLocal(v) return self.mi * v end
+function Repere:LocalToWorldAngles(a) local _, r = LocalToWorld(vector_origin, a, self.p, self.a) return r end
+function Repere:GetUp() return self.a:Up() end
+function Repere:GetForward() return self.a:Forward() end
+function Repere:GetRight() return self.a:Right() end
+local function nouveauRepere(p, a)
+  local m = Matrix()
+  m:SetTranslation(p); m:SetAngles(a)
+  return setmetatable({ p = Vector(p), a = Angle(a), m = m, mi = m:GetInverseTR() }, Repere)
+end
+
 local cache, prochain, mode = NULL, 0, "aucune"
-C.ancreIndex = 0                                 -- ancre désignée par le MJ (index d'entité reçu dans l'état), 0 = aucune
-C.nbCandidats = 0
+local repere = nil                               -- repère reçu du serveur (nil : aucun état reçu)
+C.ancreIndex, C.ancreDesignee, C.nbCandidats = 0, false, 0
+
+function C.recevoirAncre(index, pos, ang, designee)   -- appelé à chaque état reçu (cl_sequence.lua)
+  C.ancreIndex, C.ancreDesignee = index, designee
+  if repere and repere.p:DistToSqr(pos) < 0.01 and repere.a == ang then return end   -- inchangé : caches gardés
+  if not repere then print(string.format("[A2] ancre reçue du serveur : %.0f %.0f %.0f", pos.x, pos.y, pos.z)) end
+  repere = nouveauRepere(pos, ang)
+end
+
+function C.perdreAncre()                         -- le serveur ne voit plus le build : plus rien n'est dessiné
+  if repere then print("[A2] le serveur ne trouve plus le build : scène éteinte") end
+  repere, C.ancreIndex, cache, prochain = nil, 0, NULL, CurTime() + 5
+end
 
 function C.tete()
-  if C.ancreIndex > 0 then
-    local e = Entity(C.ancreIndex)
-    if reel(e) then mode = "désignée par le MJ" return e end
-  end
-  local now = CurTime()
+  if repere then mode = C.ancreDesignee and "serveur (désignée par le MJ)" or "serveur (motif)" return repere end
+  local now = CurTime()                          -- secours : aucun état reçu encore
   if now >= prochain then
     local l = C.trouverTetes()
     C.nbCandidats = #l
     local avant = cache
     cache = C.plusProche(l, EyePos()) or NULL
     prochain = now + (IsValid(cache) and 5 or 1)
-    mode = IsValid(cache) and "motif" or "aucune"
-    if cache ~= avant then
-      print(IsValid(cache) and ("[A2] ancre trouvée (motif), " .. #l .. " build(s)") or "[A2] ancre perdue : build introuvable")
-    end
+    mode = IsValid(cache) and "recherche du client (secours)" or "aucune"
+    if cache ~= avant and not IsValid(cache) then print("[A2] build introuvable côté client (en attente de l'état du serveur)") end
   end
   return IsValid(cache) and cache or nil
 end
 function C.modeAncre() return mode end
+function C.repereServeur() return repere end
 
-hook.Add("OnEntityCreated", "a2_sable_ancre", function(e)   -- collage en cours : on recherche bientôt
-  if IsValid(e) and not IsValid(cache) then prochain = math.min(prochain, CurTime() + 0.5) end
+hook.Add("OnEntityCreated", "a2_sable_ancre", function(e)   -- collage en cours : on recherche bientôt (secours)
+  if IsValid(e) and not repere and not IsValid(cache) then prochain = math.min(prochain, CurTime() + 0.5) end
 end)
