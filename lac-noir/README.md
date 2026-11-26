@@ -25,7 +25,7 @@ Collez le dupe **sans le tourner**.
 **Comment le build est reconnu.** Le dupe porte une « gravure d'usine » : 3 petites plaques dédiées, noyées dans la dalle
 du lac (invisibles, intouchables), à des écarts, des angles et des couleurs que personne ne pose par hasard. C'est le
 serveur qui la cherche (il voit toute la map) et qui envoie la position du build aux joueurs. Au lancement, celui qui mène
-la scène lit dans le chat « build trouvé (gravure) en (x, y, z) ». Sans build trouvé, la scène ne se lance pas et le chat
+la scène lit dans sa console « build trouvé (gravure) en (x, y, z) ». Sans build trouvé, la scène ne se lance pas et la console
 le dit. Un dupe plus ancien, sans gravure, est reconnu au motif du trône (« motif »). En secours : `lac_noir_ancre`.
 
 ## Installer l'addon (staff du serveur)
