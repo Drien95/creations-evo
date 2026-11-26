@@ -65,14 +65,8 @@ local function proprio_ok(e, ply)
   return e:CPPIGetOwner() == ply or ply:IsAdmin()
 end
 
-local function repere(ply)                         -- le build posé : la plaque repère la plus proche de qui efface
-  local pres, meilleur = nil, math.huge
-  local o = IsValid(ply) and ply:GetPos() or nil
-  for _, e in ipairs(ents.FindByModel(REF)) do
-    local d = o and e:GetPos():DistToSqr(o) or 0
-    if d < meilleur then pres, meilleur = e, d end
-  end
-  return pres and (pres:GetPos() - SOL) or nil
+local function repere(ply)                         -- le build posé : même recherche que le lancement (motif ou ancre)
+  return (LAC_NOIR.trouver(ply))
 end
 
 local function retirer(ply, off)
@@ -97,7 +91,8 @@ concommand.Add("lac_noir_effacer", function(ply)
   end
   demande[cle] = nil
   local off = repere(ply)
-  if not off then LAC_NOIR.dire(ply, "[Lac noir] build introuvable (plaque repère absente)") return end
+  if not off then LAC_NOIR.dire(ply, "[Lac noir] build introuvable (motif du Lac noir absent)") return end
   LAC_NOIR.arreter()
+  LAC_NOIR.ancre_pos = nil                         -- build retiré : l'ancre manuelle ne vaut plus
   LAC_NOIR.dire(ply, string.format("[Lac noir] scène arrêtée, %d props du build retirés", retirer(ply, off)))
 end)
