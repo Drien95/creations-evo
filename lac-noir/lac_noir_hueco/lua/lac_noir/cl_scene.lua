@@ -494,7 +494,12 @@ local PIECES = {}                                 -- scène complète : monolith
 -- ---------- repérage : le dupe collé, la fente du trône ----------
 local function reperer()
   local d = ents.FindByModel(REF)
-  if #d ~= 1 then off = nil return end
+  if #d ~= 1 then                                  -- v85 : build retiré (ou pas encore collé) : plus rien du tout
+    off = nil
+    if t0 then t0 = nil; SC.couper(); RunConsoleCommand("stopsound") end
+    if CATH and CATH.oublier then CATH.oublier() end
+    return
+  end
   off = d[1]:GetPos() - SOL
   if CATH then CATH.reperer(off) end
   local m = ents.FindByModel(MOITIE)
@@ -2854,7 +2859,7 @@ local coupe = false                                     -- vrai pendant la mesur
 local partout = CreateClientConVar("lac_cath_partout", "0", false, false)
 local dans, zone_t = false, 0
 local function zone()
-  if coupe or M.coupee or not actif:GetBool() then return false end
+  if coupe or M.coupee or not actif:GetBool() or not off then return false end   -- v85 : sans build, rien
   if M.T then return off ~= nil end                     -- scène complète : dessinée pendant la démo du lac
   if zone_t > CurTime() then return dans end
   zone_t = CurTime() + 0.5
@@ -2887,6 +2892,7 @@ end
 
 local verif = 0
 local brume_props                                         -- définie plus bas, avec la brume
+function M.oublier() off = nil; M.T, M.TR, M.actif = nil, nil, false end   -- v85 : build retiré
 function M.reperer(o)                                     -- appelé par le repérage du lac (une fois par seconde)
   M.coupee = file.Exists("lac_mesure/cath_off.txt", "DATA")   -- mesure « lac seul » sans console ni focus
   if mes:GetBool() and not mesure_actif then mesure_actif = true; RunConsoleCommand("lac_cath_partout", "1") end
