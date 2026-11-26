@@ -236,6 +236,7 @@ local function construire()
 		end
 	end
 	meshes = {}
+	A2_SABLE.solVersion = (A2_SABLE.solVersion or 0) + 1   -- le sol a pu changer : caches de sommets de la séquence à refaire
 	for _, dx in ipairs(DECALAGES) do decal = dx; table.insert(meshes, construireUne()) end
 	decal = 0
 end
