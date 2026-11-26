@@ -20,6 +20,9 @@ une éclipse totale, puis le boum : l'onde part du pied de l'épée et allume to
 
 Aucun prop ne traverse le sable (vérifié sur la géométrie de la map).
 
+Collez le dupe **sans le tourner** : le script reconnaît le build à son motif (la grande plaque 8x8 et les deux moitiés
+du dossier du trône à leur place exacte). Les plaques 8x8 des autres builds de la map sont ignorées.
+
 ## Installer l'addon (staff du serveur)
 
 1. Copier le dossier `lac_noir_hueco` dans `garrysmod/addons/` du serveur.
@@ -53,6 +56,18 @@ Pour mener la scène sans ouvrir la console, chacun lie les touches qu'il veut, 
 
 Chaque séquence joue puis tient sa dernière image jusqu'à la suivante. Un joueur qui arrive ou qui entre dans la zone
 reprend la séquence en cours.
+
+## Si rien ne s'affiche dans la zone
+
+Dans la console du joueur (touche `²`), cherchez les lignes qui commencent par :
+
+| Ligne | Ce qu'elle dit |
+|---|---|
+| `[lac_cloche]` | le script client est bien chargé |
+| `[lac_repere] ... build du Lac noir trouvé` | le dupe est reconnu |
+| `[lac_repere] ... motif du build introuvable` | dupe absent, incomplet, ou collé tourné |
+| `[lac_eau_demo] séquence N` | la séquence est bien reçue |
+| `[lac_boite] joueur dans de la boîte` | le joueur est dans la zone de la scène |
 
 ## Performance
 

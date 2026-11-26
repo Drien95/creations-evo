@@ -492,18 +492,50 @@ end
 local CATH                                        -- scène complète : la cathédrale (module en fin de fichier)
 local PIECES = {}                                 -- scène complète : monolithes, aqueducs, flamme, éclipse (modules en fin de fichier ; une seule locale : limite de 200)
 -- ---------- repérage : le dupe collé, la fente du trône ----------
+SC.MOIT = { Vector(-30.521, -2317.987, 327.428), Vector(30.521, -2317.987, 327.428) }   -- v86 : moitiés du dossier, depuis la plaque
+function SC.moities(p, liste)                    -- v86 : les deux moitiés à leur place autour de la plaque p (20 u près), ou nil
+  local r = {}
+  for i, v in ipairs(SC.MOIT) do
+    local cible = p + v
+    for _, e in ipairs(liste) do if IsValid(e) and e:GetPos():DistToSqr(cible) < 400 then r[i] = e break end end
+    if not r[i] then return nil end
+  end
+  return r
+end
+function SC.repere()                             -- v86 : la plaque du build reconnue à son motif, la plus proche du joueur
+  local ply, plaques, liste = LocalPlayer(), ents.FindByModel(REF), ents.FindByModel(MOITIE)
+  local best, bd, bm
+  for _, e in ipairs(plaques) do
+    local m = IsValid(e) and SC.moities(e:GetPos(), liste)
+    if m then
+      local d = IsValid(ply) and e:GetPos():DistToSqr(ply:GetPos()) or 0
+      if not best or d < bd then best, bd, bm = e, d, m end
+    end
+  end
+  local cle = #plaques .. "/" .. #liste .. "/" .. tostring(best)
+  if cle ~= SC.diag then
+    SC.diag = cle
+    print(string.format("[lac_repere] %d plaque(s) 8x8 et %d moitié(s) vues : %s", #plaques, #liste,
+      best and ("build du Lac noir trouvé en " .. tostring(best:GetPos())) or "motif du build introuvable"))
+  end
+  return best, bm
+end
+function SC.dans_boite(p)                        -- v86 : position dans la boîte du build repéré (marge 300 u)
+  if not off then return false end
+  local x, y, z = p.x - off.x, p.y - off.y, p.z - off.z
+  return x >= SC.X0 - 300 and x <= SC.X1 + 300 and y >= SC.Y0 - 300 and y <= SC.Y1 + 300 and z >= SC.Z0 - 300 and z <= SC.Z1 + 300
+end
 local function reperer()
-  local d = ents.FindByModel(REF)
-  if #d ~= 1 then                                  -- v85 : build retiré (ou pas encore collé) : plus rien du tout
+  local d, m = SC.repere()
+  if not d then                                    -- v86 : motif introuvable ; v85 : build retiré (ou pas encore collé) : plus rien du tout
     off = nil
     if t0 then t0 = nil; SC.couper(); RunConsoleCommand("stopsound") end
     if CATH and CATH.oublier then CATH.oublier() end
     return
   end
-  off = d[1]:GetPos() - SOL
+  off = d:GetPos() - SOL
   if CATH then CATH.reperer(off) end
-  local m = ents.FindByModel(MOITIE)
-  if #m == 2 then
+  if m then                                        -- v86 : les deux moitiés du motif
     local a1, b1 = m[1]:WorldSpaceAABB(); local a2, b2 = m[2]:WorldSpaceAABB()
     if a1.x > a2.x then a1, b1, a2, b2 = a2, b2, a1, b1 end
     fente = { x = (b1.x + a2.x) / 2, l = a2.x - b1.x, y = math.min(a1.y, a2.y), z0 = math.max(a1.z, a2.z), z1 = math.min(b1.z, b2.z) }
@@ -3389,7 +3421,8 @@ hook.Add("Think", "LacNoir_monolithes_scene", function()          -- repérage d
   if CurTime() < prochain then return end
   prochain = CurTime() + 1
   MONO.coupee = file.Exists("lac_mesure/mono_off.txt", "DATA")   -- mesure « sans monolithes » sans console ni focus
-  local t = ents.FindByModel(MODELE)
+  local t = {}                                                 -- v86 : seulement ceux du build repéré
+  for _, e in ipairs(ents.FindByModel(MODELE)) do if SC.dans_boite(e:GetPos()) then t[#t + 1] = e end end
   if #t ~= nb then nb = #t; if nb > 0 then construire(t) else L = {} end end
 end)
 print("[lac_scene_complete] monolithes accrochés au lac")
@@ -3676,7 +3709,8 @@ hook.Add("Think", "LacNoir_aqueducs_scene", function()                    -- rep
   if CurTime() < prochain then return end
   prochain = CurTime() + 1
   AQ.coupee = file.Exists("lac_mesure/aq_off.txt", "DATA")          -- mesure « sans aqueducs » sans console ni focus
-  local t = ents.FindByModel(MODELE)
+  local t = {}                                                 -- v86 : seulement ceux du build repéré
+  for _, e in ipairs(ents.FindByModel(MODELE)) do if SC.dans_boite(e:GetPos()) then t[#t + 1] = e end end
   if #t ~= nb then nb = #t; if nb > 0 then construire(t) else L = {} end end
 end)
 print("[lac_scene_complete] aqueducs accrochés au lac")
