@@ -19,7 +19,7 @@ S'il y en a plusieurs, il ne lance rien et le dit. Si Sumii se reconnecte, il fa
 
 **Comment le build est reconnu :** à la disposition de ses props, jamais à leur couleur. Il faut la plaque du
 centre, au moins 3 de ses 4 voisines et au moins 2 des 3 cerisiers à leur place. Le build peut être collé
-n'importe où et tourné. Un autre build avec les mêmes plaques n'est pas pris.
+n'importe où ; colle-le **sans le tourner** (un collage tourné n'a pas encore été essayé en jeu). Un autre build avec les mêmes plaques n'est pas pris.
 
 ## Les temps, dans l'ordre
 
